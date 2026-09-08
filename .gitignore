@@ -1,0 +1,79 @@
+# 백엔드 Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.env
+.env.local
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+.idea/
+
+# Android
+.gradle/
+.idea/
+*.iml
+*.apk
+*.aab
+.DS_Store
+local.properties
+build/
+captures/
+gradlew
+gradlew.bat
+debug/
+release/
+
+# Node (만약 web 버전이 있다면)
+node_modules/
+npm-debug.log
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.env.local
+.env.*.local
+
+# 로그
+*.log
