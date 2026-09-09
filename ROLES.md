@@ -331,3 +331,255 @@ RunTrack/
 
 ---
 
+## 🌳 Git 브랜칭 전략
+
+**선택 전략**: GitHub Flow
+
+### 브랜치 구조
+
+```
+main (프로덕션, 항상 배포 가능한 상태)
+├── feature/pm-database-schema        (PM - DB 설계)
+├── feature/backend1-users-api        (Backend 1 - 사용자&신발)
+├── feature/backend2-running-api      (Backend 2 - 러닝&기상&AI)
+├── feature/frontend-ui               (Frontend - UI 화면)
+└── feature/devops-docker             (DevOps&QA - 배포)
+```
+
+### 브랜치 네이밍 규칙
+
+**Feature 브랜치:**
+```
+feature/{역할}-{기능명}
+
+예시:
+- feature/pm-database-schema
+- feature/backend1-users-api
+- feature/backend1-shoes-api
+- feature/backend2-running-api
+- feature/backend2-weather-api
+- feature/backend2-ai-recommendations
+- feature/frontend-auth-screens
+- feature/frontend-home-screen
+- feature/devops-dockerfile
+- feature/devops-cicd-pipelines
+```
+
+**Bugfix 브랜치:**
+```
+bugfix/{버그명}
+
+예시:
+- bugfix/login-token-expired
+- bugfix/shoe-cascade-delete
+```
+
+### 커밋 메시지 규칙
+
+```
+<type>: <subject>
+
+<body>
+
+<footer>
+```
+
+**Type 종류:**
+- `feat`: 새로운 기능 추가
+- `fix`: 버그 수정
+- `refactor`: 코드 리팩토링
+- `test`: 테스트 추가/수정
+- `docs`: 문서 변경
+- `style`: 코드 스타일 (공백, 세미콜론 등)
+- `chore`: 빌드/의존성/도구 변경
+
+**예시:**
+```
+feat: Add user authentication API endpoints
+
+- Implement POST /api/users/signup
+- Implement POST /api/users/login
+- Add JWT token generation and validation
+- Add password hashing with bcrypt
+
+Closes #1
+```
+
+### Pull Request (PR) 프로세스
+
+**1단계: 브랜치 생성**
+```bash
+git checkout -b feature/pm-database-schema
+```
+
+**2단계: 코드 작성 및 커밋**
+```bash
+git add .
+git commit -m "feat: Design user, shoe, running_record tables"
+```
+
+**3단계: 로컬 테스트**
+```bash
+# 테스트 실행
+pytest tests/
+# 코드 스타일 검사
+flake8 .
+black .
+mypy .
+```
+
+**4단계: GitHub에 push**
+```bash
+git push origin feature/pm-database-schema
+```
+
+**5단계: Pull Request 생성**
+- GitHub에서 "Create Pull Request" 클릭
+- PR 제목: `[PM] Database schema design`
+- PR 설명:
+  ```
+  ## 작업 내용
+  - User 테이블 설계
+  - Shoe 테이블 설계
+  - RunningRecord 테이블 설계
+  
+  ## 완료 항목
+  - [ ] 테이블 구조 검증
+  - [ ] 관계 설정 확인
+  - [ ] 인덱스 최적화
+  
+  ## 스크린샷 (필요시)
+  ![ERD 이미지]
+  ```
+- 리뷰어 지정: 팀 리더 또는 해당 업무 담당자
+
+**6단계: 코드 리뷰**
+- 최소 1명 이상 승인 필수
+- CI/CD 체크 통과 필수
+- 피드백 받으면 수정 후 재커밋
+
+**7단계: Merge**
+- "Squash and merge" 또는 "Create a merge commit"
+- `main` 브랜치로 병합
+- PR 종료 후 원본 브랜치 자동 삭제
+
+### GitHub 저장소 설정
+
+**Branch Protection Rules (main 브랜치):**
+- ✅ Require pull request reviews (최소 1명)
+- ✅ Require status checks to pass (CI/CD 필수)
+- ✅ Require branches to be up to date
+- ✅ Dismiss stale pull request approvals
+- ✅ Restrict who can push to matching branches
+
+**CI/CD 자동 실행 항목:**
+- Python 의존성 설치
+- flake8 코드 스타일 검사
+- black 포맷 검사
+- mypy 타입 체크
+- pytest 단위 테스트
+- pytest-cov 커버리지 리포트
+
+### 주의사항
+
+⚠️ **main 브랜치에 직접 push 금지**
+- 모든 변경은 feature 브랜치에서 시작
+- PR을 통해서만 병합
+
+⚠️ **충돌 방지**
+- 매일 아침 pull로 최신 코드 받기
+- Merge 전에 최신 main과 동기화
+- 겹치는 파일 작업 최소화
+
+⚠️ **커밋 규칙 준수**
+- 의미 있는 메시지 작성
+- 한 번에 너무 많은 변경 금지
+- 테스트 없는 커밋 금지
+
+### 팀원별 작업 예시
+
+**PM이 DB 설계하는 경우:**
+```bash
+# 1. 브랜치 생성
+git checkout -b feature/pm-database-schema
+
+# 2. 파일 수정
+# backend/app/models/user.py 작성
+# backend/app/models/shoe.py 작성
+# backend/app/schemas/*.py 작성
+
+# 3. 테스트 작성
+# backend/tests/test_integration.py 작성
+
+# 4. 커밋
+git add backend/app/models/ backend/app/schemas/ backend/tests/
+git commit -m "feat: Add database models and schemas
+
+- Define User, Shoe, RunningRecord ORM models
+- Create Pydantic validation schemas
+- Add relationships and constraints"
+
+# 5. Push
+git push origin feature/pm-database-schema
+
+# 6. GitHub에서 PR 생성 및 리뷰 요청
+```
+
+**Backend 1이 회원가입 API 구현하는 경우:**
+```bash
+# 1. 브랜치 생성
+git checkout -b feature/backend1-users-api
+
+# 2. 코드 작성
+# backend/app/api/routes/users.py 구현
+# backend/tests/test_users.py 작성
+
+# 3. 로컬 테스트
+pytest backend/tests/test_users.py
+flake8 backend/app/api/routes/users.py
+
+# 4. 커밋 및 push
+git add backend/
+git commit -m "feat: Implement user authentication API
+
+- Add POST /api/users/signup endpoint
+- Add POST /api/users/login endpoint
+- Implement JWT token generation
+- Add password hashing with bcrypt
+- Write 6 unit tests"
+
+git push origin feature/backend1-users-api
+
+# 5. GitHub PR 생성 및 Backend 2 검토 요청
+```
+
+### 위기 상황 대처
+
+**실수로 main에 커밋한 경우:**
+```bash
+# 최근 커밋 되돌리기
+git reset --soft HEAD~1
+git checkout -b feature/fix-wrong-commit
+git commit -m "feat: [설명]"
+git push origin feature/fix-wrong-commit
+# GitHub에서 PR 생성
+```
+
+**브랜치에서 main의 최신 변경사항 적용:**
+```bash
+git fetch origin
+git rebase origin/main
+# 충돌 해결
+git push origin feature/xxx --force
+```
+
+**로컬 브랜치 정리:**
+```bash
+# 머지된 브랜치 삭제
+git branch -d feature/pm-database-schema
+# 원격 브랜치 정리
+git fetch origin --prune
+```
+
+---
+
