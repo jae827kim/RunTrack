@@ -67,6 +67,73 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ---
 
+## 👥 Backend 역할 분담
+
+### Backend 1: 사용자 & 신발 관리 (User/Shoe API)
+
+**담당 파일:**
+- `app/api/routes/users.py` - 회원가입, 로그인, 프로필
+- `app/api/routes/shoes.py` - 신발 추가, 수정, 삭제
+
+**구현 API:**
+```
+POST   /users/signup              - 회원가입
+POST   /users/login               - 로그인
+GET    /users/me                  - 프로필 조회
+PUT    /users/update              - 프로필 수정
+POST   /shoes/add                 - 신발 추가
+GET    /shoes/list                - 신발 목록
+GET    /shoes/{id}                - 신발 상세
+PUT    /shoes/{id}                - 신발 수정
+DELETE /shoes/{id}                - 신발 삭제
+```
+
+**코드량:** ~300줄  
+**테스트:** 10개
+
+---
+
+### Backend 2: 러닝기록 & AI & 날씨 (Running/Weather/AI API)
+
+**담당 파일:**
+- `app/api/routes/running.py` - 러닝 기록 저장/조회
+- `app/api/routes/weather.py` - 날씨 정보
+- `app/api/ai/recommendations.py` - Google Gemini AI 추천
+
+**구현 API:**
+```
+POST   /running/create            - 러닝 기록 저장
+GET    /running/list              - 러닝 기록 조회
+GET    /running/stats             - 러닝 통계
+PUT    /running/{id}              - 기록 수정
+DELETE /running/{id}              - 기록 삭제
+GET    /weather/info              - 기상 정보
+POST   /recommendations/shoes     - AI 신발 추천
+```
+
+**코드량:** ~400줄  
+**테스트:** 10개
+
+---
+
+## 📌 PM이 먼저 작성할 ORM & Pydantic
+
+Backend 개발자들이 API를 구현하기 전에, PM이 다음 파일들을 먼저 작성합니다:
+
+**ORM 모델** (`app/models/`):
+- `user.py` - User 모델 정의
+- `shoe.py` - Shoe 모델 정의
+- `running_record.py` - RunningRecord 모델 정의
+
+**Pydantic 스키마** (`app/schemas/`):
+- `user.py` - UserCreate, UserResponse
+- `shoe.py` - ShoeCreate, ShoeResponse
+- `running_record.py` - RunningRecordCreate, RunningRecordResponse
+
+이 파일들이 준비되면, Backend 개발자들은 이를 import하여 API를 구현합니다.
+
+---
+
 ## 📁 프로젝트 구조
 
 ```

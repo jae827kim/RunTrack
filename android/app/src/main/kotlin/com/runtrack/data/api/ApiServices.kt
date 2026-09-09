@@ -5,28 +5,24 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface UserService {
-    @POST("api/users/register")
-    suspend fun register(@Body request: RegisterRequest): Response<User>
-
-    @POST("api/users/login")
-    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
-
-    @GET("api/users/me")
-    suspend fun getProfile(): Response<User>
-
-    @PUT("api/users/me")
-    suspend fun updateProfile(@Body user: User): Response<User>
+    // TODO: 사용자 로그인/회원가입 API 정의
 }
 
 interface ShoeService {
-    @POST("api/shoes")
-    suspend fun createShoe(@Body request: ShoeCreateRequest): Response<Shoe>
+    // TODO: 신발 CRUD API 정의
+}
 
-    @GET("api/shoes")
-    suspend fun getShoes(): Response<List<Shoe>>
+interface RunningService {
+    // TODO: 러닝 기록 CRUD 및 통계 API 정의
+}
 
-    @GET("api/shoes/{id}")
-    suspend fun getShoe(@Path("id") id: Int): Response<Shoe>
+interface WeatherService {
+    // TODO: 기상 API 정의
+}
+
+interface RecommendationService {
+    // TODO: AI 추천 API 정의
+}
 
     @PUT("api/shoes/{id}")
     suspend fun updateShoe(

@@ -2,6 +2,22 @@
 
 > 🏃‍♂️ **AI 기반 맞춤형 러닝 조언 앱 - 풀 스택 설정 가이드**
 
+**GitHub Repository**: https://github.com/jae827kim/RunTrack
+
+---
+
+## 📅 7주 개발 일정 및 팀 역할
+
+| 주차 | PM | Backend 1<br/>(User/Shoe) | Backend 2<br/>(Running/AI) | Frontend | DevOps & QA |
+|------|-----|------|------|------|------|
+| **1주** | DB 설계, ERD 작성 | API 설계 | API 설계 | 화면 설계 | 환경 구축 |
+| **2주** | ORM 모델, Pydantic 스키마 | 회원가입/로그인 | 러닝 API | 로그인/홈 화면 | Docker Compose, CI/CD |
+| **3주** | 통합 테스트 작성 | 신발 API | 기상/AI API | 기록/신발 화면 | 테스트 자동화 |
+| **4주** | 통합 테스트 검증 | 신발 API 완성 | AI 추천 완성 | 추천 화면 | 배포 파이프라인 |
+| **5주** | 통합 시스템 점검 | 버그 수정 | 버그 수정 | UI 버그 수정 | 최종 테스트 |
+| **6주** | 발표 자료 준비 | 최적화 | 최적화 | 최적화 | 배포 |
+| **7주** | 최종 발표 | 최종 발표 | 최종 발표 | 최종 발표 | 최종 발표 |
+
 ---
 
 ## 📋 목차
@@ -35,6 +51,26 @@ RunTrack/
 | **Backend** | Python, FastAPI, PostgreSQL, Redis |
 | **AI** | Google Gemini API |
 | **External** | Google Maps, OpenWeather |
+| **DevOps** | Docker, Docker Compose, GitHub Actions |
+
+### PM의 초기 작업 (1-2주)
+
+**1단계: ERD 설계**
+```
+User 테이블 ─── 1:N ─── Shoe 테이블
+User 테이블 ─── 1:N ─── RunningRecord 테이블
+Shoe 테이블 ─── 1:N ─── RunningRecord 테이블
+```
+
+**2단계: ORM 모델 작성 (SQLAlchemy)**
+- `app/models/user.py` - User 모델
+- `app/models/shoe.py` - Shoe 모델  
+- `app/models/running_record.py` - RunningRecord 모델
+
+**3단계: Pydantic 검증 스키마 작성**
+- `app/schemas/user.py` - UserCreate, UserResponse
+- `app/schemas/shoe.py` - ShoeCreate, ShoeResponse
+- `app/schemas/running_record.py` - RunningRecordCreate, RunningRecordResponse
 
 ---
 

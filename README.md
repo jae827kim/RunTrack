@@ -13,7 +13,21 @@
 
 ---
 
-## 🛠️ 기술 스택
+## � 팀 구성 (5명)
+
+| 역할 | 담당자 | 주요 업무 |
+|------|--------|----------|
+| **PM** | TBD | DB 설계, ORM/Pydantic 스키마, 통합 테스트, 팀 조율 |
+| **Backend 1** | TBD | 사용자/신발 관리 API (users.py, shoes.py) |
+| **Backend 2** | TBD | 러닝/날씨/AI API (running.py, weather.py, recommendations.py) |
+| **Frontend** | TBD | Kotlin 모바일 앱 (6개 화면, 500줄) |
+| **DevOps & QA** | TBD | Docker, CI/CD, 테스트 자동화, 배포 |
+
+**GitHub Repository**: https://github.com/jae827kim/RunTrack
+
+---
+
+## �🛠️ 기술 스택
 
 ### Frontend (모바일)
 ```

@@ -4,30 +4,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Shoe(
-    val id: Int,
-    val userId: Int,
-    val brand: String,
-    val model: String,
-    val size: String? = null,
-    val color: String? = null,
-    val purchasePriceWon: Int? = null,
-    val purchaseDate: String? = null,
-    val cumulativeKm: Float,
-    val runCount: Int,
-    val condition: String,
-    val notes: String? = null,
-    val createdAt: String,
-    val updatedAt: String,
+    // TODO: PM을 참고하여 신발 모델 단연 정의
 )
 
 @Serializable
 data class ShoeCreateRequest(
-    val brand: String,
-    val model: String,
-    val size: String? = null,
-    val color: String? = null,
-    val purchasePriceWon: Int? = null,
-    val purchaseDate: String? = null,
+    // TODO: 신발 등록 숲고 단연 정의
+)
     val notes: String? = null,
 )
 

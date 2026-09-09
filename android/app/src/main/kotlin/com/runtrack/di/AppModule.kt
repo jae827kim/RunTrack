@@ -1,11 +1,5 @@
 package com.runtrack.di
 
-import com.runtrack.data.api.RetrofitClient
-import com.runtrack.data.api.UserService
-import com.runtrack.data.api.ShoeService
-import com.runtrack.data.api.RunningService
-import com.runtrack.data.api.WeatherService
-import com.runtrack.data.repository.ShoeRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,18 +9,8 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-    
-    @Provides
-    @Singleton
-    fun provideUserService(): UserService = RetrofitClient.userService
-    
-    @Provides
-    @Singleton
-    fun provideShoeService(): ShoeService = RetrofitClient.shoeService
-    
-    @Provides
-    @Singleton
-    fun provideRunningService(): RunningService = RetrofitClient.runningService
+    // TODO: Retrofit 서비스, Repository 주입 정의
+}
     
     @Provides
     @Singleton

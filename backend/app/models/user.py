@@ -17,10 +17,10 @@ class User(Base):
     
     # 신체 정보
     weight_kg = Column(Float)
-    height_cm = Column(Integer)
+    height_cm = Column(Integeneutralr)
     foot_size = Column(String)  # "280mm", "US 10" 등
     foot_width = Column(String)  # "narrow", "regular", "wide"
-    arch_type = Column(String)  # "low", "neutral", "high"
+    arch_type = Column(String)  # "low", "", "high"
     
     # 선호도
     running_style = Column(String)  # "cushioning", "speed", "trail", "all-purpose"

@@ -4,30 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RunningRecord(
-    val id: Int,
-    val userId: Int,
-    val shoeId: Int? = null,
-    val title: String? = null,
-    val description: String? = null,
-    val distanceKm: Float,
-    val durationMinutes: Int,
-    val startTime: String,
-    val endTime: String,
-    val avgPaceMinPerKm: Float? = null,
-    val maxSpeedKmh: Float? = null,
-    val avgSpeedKmh: Float? = null,
-    val avgHeartRate: Int? = null,
-    val maxHeartRate: Int? = null,
-    val caloriesBurned: Float? = null,
-    val elevationGainM: Float? = null,
-    val elevationLossM: Float? = null,
-    val maxAltitudeM: Float? = null,
-    val gpsRoute: String? = null,  // GeoJSON 또는 Polyline
-    val temperatureC: Float? = null,
-    val humidityPercent: Int? = null,
-    val windSpeedKmh: Float? = null,
-    val routeType: String? = null,
-    val surfaceType: String? = null,
+    // TODO: PM을 참고하여 러닝 기록 모델 단연 정의
+)
     val difficulty: String? = null,
     val feeling: String? = null,
     val notes: String? = null,

@@ -25,8 +25,8 @@ RunTrack 안드로이드 앱은 **Kotlin**과 **Jetpack Compose**로 구축된 �
 
 ```bash
 # 프로젝트 클론
-git clone https://github.com/your-repo/runtrack.git
-cd runtrack/android
+git clone https://github.com/jae827kim/RunTrack.git
+cd RunTrack/android
 
 # Android Studio에서 열기
 # File > Open > android 폴더 선택

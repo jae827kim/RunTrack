@@ -331,18 +331,3 @@ RunTrack/
 
 ---
 
-## 📞 팀 연락처
-
-| 역할 | 담당자 | 카톡 |
-|------|--------|------|
-| PM | | |
-| Backend 1 | | |
-| Backend 2 | | |
-| Frontend | | |
-| DevOps & QA | | |
-
-**주간 회의**: 매주 월요일 14:00
-
----
-
-**Let's Build RunTrack! 🚀**

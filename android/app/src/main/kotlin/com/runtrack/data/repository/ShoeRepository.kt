@@ -1,33 +1,11 @@
 package com.runtrack.data.repository
 
-import com.runtrack.data.api.RetrofitClient
 import com.runtrack.data.models.*
 import javax.inject.Inject
 
 class ShoeRepository @Inject constructor() {
-    private val shoeService = RetrofitClient.shoeService
-
-    suspend fun createShoe(request: ShoeCreateRequest): Result<Shoe> = try {
-        val response = shoeService.createShoe(request)
-        if (response.isSuccessful) {
-            Result.success(response.body()!!)
-        } else {
-            Result.failure(Exception("신발 등록 실패: ${response.message()}"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    suspend fun getShoes(): Result<List<Shoe>> = try {
-        val response = shoeService.getShoes()
-        if (response.isSuccessful) {
-            Result.success(response.body() ?: emptyList())
-        } else {
-            Result.failure(Exception("신발 목록 조회 실패: ${response.message()}"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+    // TODO: ShoeService를 주입받아 CRUD 로직 구현
+}
 
     suspend fun getShoe(id: Int): Result<Shoe> = try {
         val response = shoeService.getShoe(id)

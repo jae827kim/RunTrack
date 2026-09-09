@@ -4,45 +4,20 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class User(
-    val id: Int,
-    val username: String,
-    val email: String,
-    val weightKg: Float? = null,
-    val heightCm: Int? = null,
-    val footSize: String? = null,
-    val footWidth: String? = null,
-    val archType: String? = null,
-    val runningStyle: String? = null,
-    val budgetWon: Int? = null,
-    val preferredBrands: List<String>? = null,
-    val createdAt: String,
-    val updatedAt: String,
+    // TODO: PM을 참고하여 사용자 모델 단연 정의
 )
 
 @Serializable
 data class LoginRequest(
-    val username: String,
-    val password: String,
+    // TODO: 로그인 숲고 단연 정의
 )
 
 @Serializable
 data class LoginResponse(
-    val accessToken: String,
-    val tokenType: String,
-    val expiresIn: Int,
+    // TODO: 로그인 응답 단연 정의
 )
 
 @Serializable
 data class RegisterRequest(
-    val username: String,
-    val email: String,
-    val password: String,
-    val weightKg: Float? = null,
-    val heightCm: Int? = null,
-    val footSize: String? = null,
-    val footWidth: String? = null,
-    val archType: String? = null,
-    val runningStyle: String? = null,
-    val budgetWon: Int? = null,
-    val preferredBrands: List<String>? = null,
+    // TODO: 회원가입 숲고 단연 정의
 )
