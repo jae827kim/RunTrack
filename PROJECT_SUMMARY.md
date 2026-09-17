@@ -77,10 +77,10 @@
 │   └── 📁 gradle/
 │       └── 📁 wrapper/
 │
-└── 📁 docs/                        # 추가 문서 (계획)
-    ├── 📄 API.md
-    ├── 📄 ARCHITECTURE.md
-    └── 📄 CONTRIBUTING.md
+├── 📄 PROJECT_SUMMARY.md           # 현재 구조 요약
+├── 📄 README.md                    # 프로젝트 소개
+├── 📄 ROLES.md                     # 역할 및 일정
+└── 📄 SETUP.md                     # 통합 설정 가이드
 
 ```
 
