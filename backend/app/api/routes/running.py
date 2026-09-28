@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.database import get_db
 from app.models import User
-from app.schemas.running_record import RunningRecordResponse, RunningStatistics
+from app.schemas.running_record import RunningRecordResponse, RunningStatistics, RunningRecordUpdate
 from app.services.running import RunningNotImplementedError, RunningService
 
 router = APIRouter(responses={
@@ -69,3 +69,21 @@ def get_weekly_statistics(service: RunningService = Depends(get_running_service)
 @router.get("/statistics/monthly", response_model=dict[str, RunningStatistics])
 def get_monthly_statistics(service: RunningService = Depends(get_running_service)):
     return service.monthly()
+
+
+@router.put("/{record_id}", response_model=RunningRecordResponse)
+def update_running_record(
+    request: RunningRecordUpdate,
+    record_id: int = Path(..., gt=0),
+    service: RunningService = Depends(get_running_service),
+):
+    """Draft: omitted fields stay unchanged, explicit null clears optional fields."""
+    return service.update_record(record_id, request)
+
+
+@router.delete("/{record_id}", status_code=204)
+def delete_running_record(
+    record_id: int = Path(..., gt=0),
+    service: RunningService = Depends(get_running_service),
+):
+    return service.delete_record(record_id)

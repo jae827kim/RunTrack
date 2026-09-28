@@ -2,6 +2,7 @@
 from sqlalchemy.orm import Session
 
 from app.models import User
+from app.schemas.running_record import RunningRecordUpdate
 
 
 class RunningNotImplementedError(Exception):
@@ -27,6 +28,14 @@ class RunningService:
 
     def get_record(self, record_id: int):
         # Filter by both record ID and self.user_id; absent records return 404.
+        raise RunningNotImplementedError
+
+    def update_record(self, record_id: int, request: RunningRecordUpdate):
+        # Check record/shoe ownership; update old and new shoe totals atomically.
+        raise RunningNotImplementedError
+
+    def delete_record(self, record_id: int):
+        # Delete only the owner's record and subtract shoe totals atomically.
         raise RunningNotImplementedError
 
     def summary(self):
