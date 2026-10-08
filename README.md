@@ -346,6 +346,16 @@ PUT은 `200`과 수정된 `UserResponse`를 반환합니다.
 - `POST /api/recommendations/shoes` - AI 기반 신발 추천 (라우트 추가 예정)
 
 ### 러닝 기록
+- `POST /api/running` - 완료된 러닝 기록 저장 (구현)
+- `PUT /api/running/{id}` - 본인 기록 부분 수정 (구현)
+- `DELETE /api/running/{id}` - 본인 기록 삭제 (구현)
+
+기본 러닝 흐름은 아래 `/start` → `/{id}/end`입니다. 시작 응답의 `session_id`를
+종료 경로에 사용하고, 종료 응답의 기록 `id`를 상세 조회에 사용합니다.
+시작·종료와 전체/주간/월간 통계가 구현되어 있으며, 종료 재시도는 중복 적립하지 않습니다.
+기존 DB에는 새 running_sessions 테이블을 추가해야 합니다. 요청 예시, 적용 명령과
+검증 범위는 [러닝 API 계약](backend/docs/RUNNING_API_CONTRACT.md)을 참고하세요.
+
 - `POST /api/running/start` - 러닝 세션 시작
 - `POST /api/running/{id}/end` - 러닝 세션 종료 및 저장
 - `GET /api/running` - 러닝 기록 조회

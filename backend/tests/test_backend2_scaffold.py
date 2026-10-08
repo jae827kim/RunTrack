@@ -12,8 +12,6 @@ RECOMMENDATION = {
     "running_style": "cushioning", "budget_won": 150000,
 }
 NEW_ROUTES = [
-    ("PUT", "/api/running/1", {"notes": "easy run"}),
-    ("DELETE", "/api/running/1", None),
     ("GET", "/api/weather/advice?latitude=37.5&longitude=127", None),
     ("GET", "/api/weather/history?latitude=37.5&longitude=127", None),
     ("POST", "/api/recommendations/shoes", RECOMMENDATION),
@@ -97,6 +95,7 @@ def test_provider_injection_and_request_forwarding(client_with_token):
 def test_openapi_exposes_all_backend2_routes_with_security():
     paths = app.openapi()["paths"]
     operations = [
+        ("post", "/api/running"),
         ("post", "/api/running/start"), ("post", "/api/running/{session_id}/end"),
         ("get", "/api/running"), ("get", "/api/running/{record_id}"),
         ("put", "/api/running/{record_id}"), ("delete", "/api/running/{record_id}"),
@@ -108,4 +107,7 @@ def test_openapi_exposes_all_backend2_routes_with_security():
     for method, path in operations:
         operation = paths[path][method]
         assert operation["security"] == [{"HTTPBearer": []}]
-        assert "501" in operation["responses"]
+        if not path.startswith("/api/running"):
+            assert "501" in operation["responses"]
+        else:
+            assert "501" not in operation["responses"]

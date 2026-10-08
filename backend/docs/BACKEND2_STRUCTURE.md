@@ -1,5 +1,9 @@
 # Backend 2 전체 개발 골격
 
+> 2026-10-08 업데이트: 아래 내용은 초기 골격 설명이다. 완료 기록의 저장·조회·수정·삭제와
+> 통계는 구현됐으며 최신 계약은 [RUNNING_API_CONTRACT.md](RUNNING_API_CONTRACT.md)를 따른다.
+> /start·/end와 보조 POST /api/running도 구현됐고 날씨·AI만 여전히 501 골격이다.
+
 후속 작성된 README를 경로 기준으로 사용하고, 초기 업무 목록 및 ROLES.md의
 수정/삭제 요구를 보완한다. 모든 기능은 아직 서비스 골격이며 실제 DB 저장,
 통계 계산, OpenWeather/Gemini 호출은 구현하지 않았다.
