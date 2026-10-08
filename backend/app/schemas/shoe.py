@@ -15,7 +15,7 @@ class ShoeBase(BaseModel):
     notes: Optional[str] = None
 
 class ShoeCreate(ShoeBase):
-    pass
+    condition: Optional[str] = None
 
 class ShoeUpdate(BaseModel):
     brand: Optional[str] = None

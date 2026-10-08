@@ -38,6 +38,21 @@ def end_running(session_id: str, service: RunningService = Depends(get_running_s
     """Session completion payload is pending; currently returns 501."""
     return service.end(session_id)
 
+# 전체 통계 요약
+@router.get("/statistics/summary", response_model=RunningStatistics)
+def get_summary_statistics(service: RunningService = Depends(get_running_service)):
+    return service.summary()
+
+# 주간 통계
+@router.get("/statistics/weekly", response_model=dict[str, RunningStatistics])
+def get_weekly_statistics(service: RunningService = Depends(get_running_service)):
+    return service.weekly()
+
+# 월간 통계
+@router.get("/statistics/monthly", response_model=dict[str, RunningStatistics])
+def get_monthly_statistics(service: RunningService = Depends(get_running_service)):
+    return service.monthly()
+
 # 러닝 기록 조회
 @router.get("", response_model=list[RunningRecordResponse])
 def get_running_records(
@@ -54,21 +69,6 @@ def get_running_record(
     service: RunningService = Depends(get_running_service),
 ):
     return service.get_record(record_id)
-
-# 전체 통계 요약
-@router.get("/statistics/summary", response_model=RunningStatistics)
-def get_summary_statistics(service: RunningService = Depends(get_running_service)):
-    return service.summary()
-
-# 주간 통계
-@router.get("/statistics/weekly", response_model=dict[str, RunningStatistics])
-def get_weekly_statistics(service: RunningService = Depends(get_running_service)):
-    return service.weekly()
-
-# 월간 통계
-@router.get("/statistics/monthly", response_model=dict[str, RunningStatistics])
-def get_monthly_statistics(service: RunningService = Depends(get_running_service)):
-    return service.monthly()
 
 
 @router.put("/{record_id}", response_model=RunningRecordResponse)
