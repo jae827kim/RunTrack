@@ -3,17 +3,23 @@
 - 러닝 세션 시작/종료, 기록 저장
 - 러닝 기록 조회, 통계 분석
 """
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.database import get_db
 from app.models import User
-from app.schemas.running_record import RunningRecordResponse, RunningStatistics, RunningRecordUpdate
-from app.services.running import RunningNotImplementedError, RunningService
+from app.schemas.running_record import (
+    RunningRecordCreate, RunningRecordResponse, RunningStatistics, RunningRecordUpdate,
+    RunningSessionStart, RunningSessionResponse, RunningSessionEnd,
+)
+from app.services.running import RunningService
 
 router = APIRouter(responses={
     401: {"description": "Authentication required"},
-    501: {"description": "Scaffold only; feature not implemented yet"},
+    404: {"description": "Owned record or shoe not found"},
+    409: {"description": "Session or shoe totals conflict"},
 })
 
 
@@ -21,22 +27,36 @@ def get_running_service(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    try:
-        yield RunningService(db, current_user)
-    except RunningNotImplementedError:
-        raise HTTPException(501, "Running feature is not implemented yet") from None
+    return RunningService(db, current_user)
 
 # 러닝 세션 시작
-@router.post("/start")
-def start_running(service: RunningService = Depends(get_running_service)):
-    """Session request/response contract is pending; currently returns 501."""
-    return service.start()
+@router.post("/start", response_model=RunningSessionResponse)
+def start_running(
+    request: RunningSessionStart | None = None,
+    service: RunningService = Depends(get_running_service),
+):
+    """Start a persisted session or recover the owner's matching active session."""
+    return service.start(request or RunningSessionStart())
 
 # 러닝 세션 종료
-@router.post("/{session_id}/end", response_model=RunningRecordResponse)
-def end_running(session_id: str, service: RunningService = Depends(get_running_service)):
-    """Session completion payload is pending; currently returns 501."""
-    return service.end(session_id)
+@router.post("/{session_id}/end", response_model=RunningRecordResponse,
+             responses={410: {"description": "Completed record was deleted"}})
+def end_running(
+    session_id: UUID,
+    request: RunningSessionEnd,
+    service: RunningService = Depends(get_running_service),
+):
+    """Finalize a run once; identical retries return the existing record."""
+    return service.end(str(session_id), request)
+
+
+@router.post("", response_model=RunningRecordResponse, status_code=201)
+def create_running_record(
+    request: RunningRecordCreate,
+    service: RunningService = Depends(get_running_service),
+):
+    """Save a completed run and update the selected shoe's totals atomically."""
+    return service.create_record(request)
 
 # 전체 통계 요약
 @router.get("/statistics/summary", response_model=RunningStatistics)
@@ -86,4 +106,5 @@ def delete_running_record(
     record_id: int = Path(..., gt=0),
     service: RunningService = Depends(get_running_service),
 ):
-    return service.delete_record(record_id)
+    service.delete_record(record_id)
+    return Response(status_code=204)

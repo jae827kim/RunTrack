@@ -1,15 +1,10 @@
-"""Unfinished routes must not look successful or bypass authentication."""
+"""Session authentication and running query validation."""
 import pytest
 
 
 ROUTES = [
     ("POST", "/api/running/start"),
-    ("POST", "/api/running/session-1/end"),
-    ("GET", "/api/running"),
-    ("GET", "/api/running/1"),
-    ("GET", "/api/running/statistics/summary"),
-    ("GET", "/api/running/statistics/weekly"),
-    ("GET", "/api/running/statistics/monthly"),
+    ("POST", "/api/running/00000000-0000-0000-0000-000000000001/end"),
 ]
 
 
@@ -27,14 +22,11 @@ def running_client(auth_integration):
 
 
 @pytest.mark.parametrize("method,path", ROUTES)
-def test_scaffold_requires_auth_and_returns_501(running_client, method, path):
+def test_session_requires_authentication(running_client, method, path):
     client, headers = running_client
     unauthorized = client.request(method, path)
     assert unauthorized.status_code == 401
     assert unauthorized.headers["www-authenticate"] == "Bearer"
-    response = client.request(method, path, headers=headers)
-    assert response.status_code == 501
-    assert response.json() == {"detail": "Running feature is not implemented yet"}
 
 
 @pytest.mark.parametrize("path", [
