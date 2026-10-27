@@ -24,7 +24,6 @@ def test_shoe_crud_and_partial_update_preserves_other_fields(auth_integration):
         "model": "Pegasus",
         "size": "270",
         "color": "Black",
-        "purchase_price_won": 159000,
         "notes": "test shoe",
     }
 
@@ -58,7 +57,6 @@ def test_shoe_crud_and_partial_update_preserves_other_fields(auth_integration):
     assert updated.json()["brand"] == "Nike"
     assert updated.json()["model"] == "Pegasus"
     assert updated.json()["size"] == "270"
-    assert updated.json()["purchase_price_won"] == 159000
     assert updated.json()["notes"] == "test shoe"
 
     stats = client.get(f"/api/shoes/{shoe_id}/stats", headers=headers)

@@ -268,7 +268,7 @@ DATABASE_URL = "postgresql://user:password@localhost:5432/runtrack"
 
 **shoes** - 신발 정보
 - id, user_id, brand, model, size, color
-- purchase_price_won, purchase_date
+- purchase_date (optional), condition, notes
 - cumulative_km, run_count
 - condition, notes
 - created_at, updated_at
