@@ -270,7 +270,6 @@ DATABASE_URL = "postgresql://user:password@localhost:5432/runtrack"
 - id, user_id, brand, model, size, color
 - purchase_date (optional), condition, notes
 - cumulative_km, run_count
-- condition, notes
 - created_at, updated_at
 
 **running_records** - 러닝 기록
