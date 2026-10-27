@@ -13,7 +13,7 @@ class RunningRecordBase(BaseModel):
     distance_km: float = Field(gt=0)
     duration_minutes: int = Field(gt=0, le=2147483647)
     start_time: datetime
-    end_time: datetime
+    end_time: Optional[datetime] = None
 
 class RunningRecordCreate(RunningRecordBase):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
@@ -31,11 +31,17 @@ class RunningRecordCreate(RunningRecordBase):
     @classmethod
     def normalize_time(cls, value):
         # Existing DB columns are timezone-naive; consistently store UTC.
+        if value is None:
+            return None
         return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
 
     @model_validator(mode="after")
-    def ordered_times(self):
-        if self.end_time <= self.start_time:
+    def calculate_end_time(self):
+        # Auto-calculate end_time from start_time + duration_minutes if not provided
+        if self.end_time is None:
+            from datetime import timedelta
+            self.end_time = self.start_time + timedelta(minutes=self.duration_minutes)
+        elif self.end_time <= self.start_time:
             raise ValueError("end_time must be after start_time")
         return self
 
