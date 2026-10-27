@@ -145,6 +145,50 @@ android/
 
 ---
 
+## 📝 API 입력 필드 가이드
+
+### **신발(Shoes) 추가/수정 화면**
+
+**필수 입력:**
+- **브랜드**: TextField (예: Nike, Adidas)
+- **모델**: TextField (예: Air Zoom Pegasus 41)
+
+**선택 입력:**
+- **사이즈**: NumberField (예: 270, 42, 11)
+- **색상**: ColorPickerField 또는 TextField (예: Black, White)
+- **구매일**: DatePickerField (달력 선택기)
+- **상태**: Dropdown (good / fair / worn)
+- **메모**: TextAreaField
+
+**읽기 전용 (자동 계산):**
+- **누적 거리**: Text (km 단위, RunningRecord 추가 시 자동 증가)
+- **러닝 횟수**: Text (RunningRecord 추가 시 자동 증가)
+
+---
+
+### **러닝 기록(Running) 추가/수정 화면**
+
+**필수 입력:**
+- **거리**: NumberField (km 단위, > 0)
+- **시간**: NumberField (분 단위, 정수, > 0)
+- **시작 시간**: DateTimePickerField (달력 + 시간 선택기)
+
+**선택 입력:**
+- **신발**: Dropdown (사용자 소유 신발 목록)
+- **최고 속도**: NumberField (km/h)
+- **평균 심박**: NumberField (bpm)
+- **상승 거리**: NumberField (m)
+- **온도**: NumberField (°C)
+- **기분**: Dropdown (Great / Good / Okay / Bad)
+- **메모**: TextAreaField
+
+**읽기 전용 (자동 계산):**
+- **종료 시간**: Text (= 시작 시간 + 시간, Backend에서 자동 계산)
+- **평균 페이스**: Text (= 시간 ÷ 거리, 분/km 단위)
+- **평균 속도**: Text (= 거리 ÷ (시간 ÷ 60), km/h 단위)
+
+---
+
 ## 🎨 UI 화면 설계
 
 ### **Figma 디자인 원칙 (Runday 참고)**

@@ -91,10 +91,13 @@ id  | email              | name    | weight_kg | height_cm
 | `user_id` | INTEGER | NOT NULL, FK → user(id) | 신발 소유 사용자 |
 | `brand` | VARCHAR(100) | NOT NULL | 신발 브랜드 (예: Nike, Adidas) |
 | `model` | VARCHAR(100) | NOT NULL | 신발 모델명 (예: Air Zoom Pegasus) |
-| `size` | VARCHAR(10) | NOT NULL | 신발 사이즈 (예: 42, 280) |
+| `size` | VARCHAR(10) | NULL | 신발 사이즈 (예: 42, 270, 11) |
 | `color` | VARCHAR(50) | NULL | 신발 색상 (선택사항) |
-| `purchase_date` | DATE | NOT NULL | 신발 구매 날짜 |
-| `cumulative_km` | DECIMAL(8,2) | DEFAULT 0 | 신발의 누적 주행거리 |
+| `purchase_date` | DATETIME | NULL | 신발 구매 날짜 (선택사항) |
+| `cumulative_km` | FLOAT | DEFAULT 0.0 | 신발의 누적 주행거리 |
+| `run_count` | INTEGER | DEFAULT 0 | 이 신발로 실행한 러닝 횟수 |
+| `condition` | VARCHAR(50) | DEFAULT 'good' | 신발 상태 (good, fair, worn) |
+| `notes` | VARCHAR(500) | NULL | 신발 메모 (선택사항) |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 기록 생성 시간 |
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | 마지막 수정 시간 |
 
@@ -111,10 +114,10 @@ CREATE INDEX idx_shoe_user_id ON shoe(user_id);
 
 **예시 데이터**:
 ```
-id  | user_id | brand | model             | size | cumulative_km
-1   | 1       | Nike  | Air Zoom Pegasus  | 42   | 245.50
-2   | 1       | Nike  | Vaporfly          | 42   | 120.75
-3   | 2       | Adidas| Ultraboost        | 38   | 85.20
+id  | user_id | brand | model             | size | cumulative_km | run_count | condition
+1   | 1       | Nike  | Air Zoom Pegasus  | 42   | 245.50        | 15        | good
+2   | 1       | Nike  | Vaporfly          | 42   | 120.75        | 8         | fair
+3   | 2       | Adidas| Ultraboost        | 38   | 85.20         | 5         | good
 ```
 
 **동작 로직**:

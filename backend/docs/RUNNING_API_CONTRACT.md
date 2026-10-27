@@ -66,19 +66,24 @@ POST /api/running 요청:
   "distance_km": 5.0,
   "duration_minutes": 30,
   "start_time": "2026-10-08T09:00:00+09:00",
-  "end_time": "2026-10-08T09:30:00+09:00",
   "shoe_id": 1,
   "notes": "아침 러닝"
 }
 ```
 
-거리·운동 시간·시작/종료 시각이 필수다. 신발은 생략/null 가능하다.
+거리·운동 시간·시작 시각이 필수다. **end_time은 선택사항**이며 생략하면
+Backend가 자동으로 `start_time + duration_minutes`로 계산한다. 신발은 생략/null 가능하다.
 거리와 운동 시간은 양수이며 시간은 기존 DB에 맞춰 정수 분 단위다.
 날짜는 ISO 8601, 시간대 없는 입력은 UTC로 해석한다. 시간대가 있는 입력은
 UTC로 변환해 기존 timezone-naive DB 컬럼에 저장한다. 응답의 시간대 없는
 날짜 문자열도 UTC다. 앱은 한국 시각에 반드시 +09:00을 붙여 전송해야 한다.
-end_time은 start_time보다 뒤여야 한다. duration_minutes는 실제 운동 시간이며
-일시정지 등을 고려해 시작·종료 시각 차이로 덮어쓰거나 동일함을 강제하지 않는다.
+
+**end_time 자동 계산**:
+- end_time을 명시하지 않으면: `end_time = start_time + duration_minutes`
+- end_time을 명시하면: 해당 값 사용 (validation: end_time > start_time)
+
+duration_minutes는 실제 운동 시간이며 일시정지 등을 고려해 시작·종료 시각 차이로
+덮어쓰거나 동일함을 강제하지 않는다.
 
 평균 페이스와 속도는 서버가 각각 시간/거리와 거리*60/시간으로 계산한다.
 보조 POST만 avg_pace_min_per_km 및 avg_speed_kmh 입력을 호환용으로 받되 덮어쓴다.
