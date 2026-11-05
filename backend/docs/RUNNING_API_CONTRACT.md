@@ -19,7 +19,7 @@
 초기 create/list/update/delete/stats 주소를 별도로 중복 생성하지 않는다.
 기본 저장은 /start → /{session_id}/end 방식이다. POST /api/running은 앞서 구현한
 완료 기록 직접 입력용 보조 API로 유지하며 start/end를 대체하지 않는다.
-날씨·Gemini 추천은 이번 구현 범위에 포함하지 않는다.
+기상 기능은 이번 러닝 API 구현 범위에 포함하지 않는다.
 
 ## 기본 흐름: 시작 → 종료
 
@@ -43,10 +43,11 @@ start_time을 생략하면 서버의 현재 UTC 시각을 사용한다. 신발�
 POST /api/running/871b4aa7-9b4e-421d-9f29-185251517e31/end 요청:
 
 ```json
-{"distance_km": 5, "duration_minutes": 30, "end_time": "2026-10-08T09:30:00+09:00", "notes": "아침 러닝"}
+{"distance_km": 5, "duration_minutes": 30, "notes": "아침 러닝"}
 ```
 
-거리·운동 시간·종료 시각은 필수다. 시작 시각/신발/사용자 ID는 세션에서 가져오므로
+거리와 운동 시간은 필수이며 종료 시각은 선택이다. 종료 시각을 생략하면
+`start_time + duration_minutes`로 계산한다. 시작 시각/신발/사용자 ID는 세션에서 가져오므로
 종료 본문으로 변경할 수 없다. 200 응답은 저장된 기록이며 그 id(int)를 상세 조회에 사용한다.
 session_id(UUID 문자열)와 완료 기록 id(int)는 별개다.
 

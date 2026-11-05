@@ -1,6 +1,6 @@
 # 👥 RunTrack 팀 역할 정의
 
-**프로젝트**: AI 기반 맞춤형 러닝 조언 앱  
+**프로젝트**: 러닝 기록 관리 앱
 **팀 구성**: 5명 (PM, Backend 1, Backend 2, Frontend, DevOps & QA)  
 **개발 기간**: 10주 (9월 17일 ~ 11월 마지막주)  
 **저장소**: https://github.com/jae827kim/RunTrack
@@ -104,30 +104,23 @@ DELETE /api/shoes/{id}           - 신발 삭제
 
 ---
 
-## 🟣 Backend 2 (러닝기록 & 기상정보 & AI)
+## 🟣 Backend 2 (러닝 기록 및 통계)
 
 **담당 역할:**
 - 러닝 기록 CRUD API
-- 기상 정보 API 통합 (OpenWeather)
-- Google Gemini AI 신발 추천 엔진
+- 러닝 세션·기록 API 및 통계 계산
 - 러닝 통계 계산 및 분석
 
 **구현 파일:**
 ```
 backend/app/api/routes/
-  ├── running.py    (러닝 기록 저장/조회/통계)
-  └── weather.py    (기상 정보, 체감온도, 러닝 추천 점수)
-
-backend/app/api/ai/
-  └── recommendations.py  (Google Gemini 신발 추천)
+  └── running.py    (러닝 세션·기록 저장/조회/통계)
 
 backend/tests/
-  ├── test_running.py              (7개 테스트)
-  ├── test_weather.py              (3개 테스트)
-  └── test_ai_recommendations.py   (5개 테스트)
+  └── test_running.py              (러닝 기능 테스트)
 ```
 
-**구현할 API (11개):**
+**구현할 API (8개):**
 ```
 POST   /api/running                      - 러닝 기록 저장
 GET    /api/running                      - 러닝 기록 조회
@@ -137,35 +130,25 @@ DELETE /api/running/{id}                 - 러닝 기록 삭제
 GET    /api/running/statistics/summary   - 전체 통계
 GET    /api/running/statistics/weekly    - 주간 통계
 GET    /api/running/statistics/monthly   - 월간 통계
-GET    /api/weather/advice               - 기상 조언 (위도, 경도)
-GET    /api/weather/history              - 기상 이력
-POST   /api/recommendations/shoes        - AI 신발 추천
 ```
 
 **체크리스트:**
 - [ ] PM의 RunningRecord 모델 import
-- [ ] 러닝 기록 저장 (거리, 시간, 신발ID, 기상정보)
+- [ ] 러닝 기록 저장 (거리, 시간, 신발 ID, 시작·종료 시각)
 - [ ] 신발 누적 거리 자동 업데이트
 - [ ] 평균 페이스 계산
-- [ ] OpenWeather API 연동
-- [ ] 러닝 추천 점수 계산 (0-100)
-- [ ] Google Gemini API 연동
-- [ ] 사용자 러닝 패턴 분석
+- [ ] 러닝 세션 종료 및 기록 저장 연동
 - [ ] 통계 계산 (주간, 월간, 연간)
 - [ ] 사용자 데이터 필터링
-- [ ] 테스트 15개 작성
-
-**필요한 API 키:**
-- GEMINI_API_KEY
-- OPENWEATHER_API_KEY
+- [ ] 러닝 API 테스트 작성
 
 **일정:**
 | 주차 | 작업 |
 |------|------|
 | 1주 | API 설계 & 외부 API 문서 학습 |
 | 2주 | 러닝 기록 API 구현 |
-| 3주 | 기상 정보 & AI 추천 엔진 |
-| 4주 | 통계 로직 & AI 프롬프트 최적화 |
+| 3주 | 러닝 기록 및 통계 기능 |
+| 4주 | 통계 로직 검증 및 오류 처리 |
 | 5주 | 버그 수정 & 성능 개선 |
 | 6주 | 최종 테스트 |
 | 7주 | 최종 발표 |
@@ -185,11 +168,10 @@ POST   /api/recommendations/shoes        - AI 신발 추천
 | 화면 | 기능 |
 |------|------|
 | 로그인/회원가입 | 이메일/비밀번호/이름 입력, 토큰 저장, 로그인 상태 유지 |
-| 홈 화면 | 프로필 표시, 최근 기록 3개, 주간 거리/시간, 버튼 (기록/신발/추천) |
+| 홈 화면 | 프로필 표시, 최근 기록 3개, 주간 거리/시간, 버튼 (기록/신발) |
 | 러닝 기록 리스트 | 모든 기록 조회, 날짜/거리/시간/신발 표시, 필터링 |
-| 러닝 기록 상세/추가 | 거리/시간/신발 입력, 기상정보 자동 조회, 저장/수정/삭제 |
+| 러닝 기록 상세/추가 | 거리/시간/신발 입력, 저장/수정/삭제 |
 | 신발 관리 | 신발 목록/추가/수정/삭제, 누적거리 표시 |
-| AI 추천 결과 | 로딩 표시, 추천 신발 목록 (3-5개), 추천 이유 표시 |
 
 **구현 파일 구조:**
 ```
@@ -198,7 +180,6 @@ ui/
   ├── home/           (홈 화면)
   ├── running/        (기록 리스트, 상세, 추가)
   ├── shoes/          (신발 관리)
-  ├── recommendations/ (AI 추천)
   ├── navigation/     (화면 네비게이션)
   └── common/         (공통 컴포넌트)
 
@@ -230,7 +211,7 @@ di/
 | 1주 | 화면 와이어프레임 & 레이아웃 설계 |
 | 2주 | 로그인/회원가입 & 홈 화면 |
 | 3주 | 러닝 기록, 신발 관리 화면 |
-| 4주 | AI 추천 화면 & 네비게이션 |
+| 4주 | 신발 관리 화면 & 네비게이션 |
 | 5주 | Backend API 연동 & 버그 수정 |
 | 6주 | UI 개선 & 성능 최적화 |
 | 7주 | 최종 발표 |
@@ -324,8 +305,8 @@ RunTrack/
 |------|-----|------|------|------|------|
 | **1주** | DB 설계 | API 설계 | API 설계 | 화면 설계 | 환경 구축 |
 | **2주** | ORM/Pydantic | 회원가입/로그인 | 러닝 API | 로그인/홈 | Docker/CI/CD |
-| **3주** | 통합 테스트 | 신발 API | 기상/AI API | 기록/신발 | 테스트 자동화 |
-| **4주** | 통합 검증 | API 완성 | AI 완성 | 추천 화면 | 배포 파이프라인 |
+| **3주** | 통합 테스트 | 신발 API | 러닝 기록 API | 기록/신발 | 테스트 자동화 |
+| **4주** | 통합 검증 | API 완성 | 통계 API | API 연동 화면 | 배포 파이프라인 |
 | **5주** | 시스템 점검 | 버그 수정 | 버그 수정 | UI 수정 | 최종 테스트 |
 | **6주** | 발표 준비 | 최적화 | 최적화 | 최적화 | 배포 |
 | **7주** | 최종 발표 | 최종 발표 | 최종 발표 | 최종 발표 | 배포 검증 |
@@ -342,7 +323,7 @@ RunTrack/
 main (프로덕션, 항상 배포 가능한 상태)
 ├── feature/pm-database-schema        (PM - DB 설계)
 ├── feature/backend1-users-api        (Backend 1 - 사용자&신발)
-├── feature/backend2-running-api      (Backend 2 - 러닝&기상&AI)
+├── feature/backend2-running-api      (Backend 2 - 러닝)
 ├── feature/frontend-ui               (Frontend - UI 화면)
 └── feature/devops-docker             (DevOps&QA - 배포)
 ```
@@ -358,8 +339,6 @@ feature/{역할}-{기능명}
 - feature/backend1-users-api
 - feature/backend1-shoes-api
 - feature/backend2-running-api
-- feature/backend2-weather-api
-- feature/backend2-ai-recommendations
 - feature/frontend-auth-screens
 - feature/frontend-home-screen
 - feature/devops-dockerfile

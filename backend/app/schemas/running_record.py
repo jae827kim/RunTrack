@@ -123,7 +123,7 @@ class RunningSessionEnd(BaseModel):
 
     distance_km: float = Field(gt=0)
     duration_minutes: int = Field(gt=0, le=2147483647)
-    end_time: datetime
+    end_time: Optional[datetime] = None
     title: Optional[str] = None
     description: Optional[str] = None
     max_speed_kmh: Optional[float] = Field(default=None, ge=0)
@@ -136,4 +136,6 @@ class RunningSessionEnd(BaseModel):
     @field_validator("end_time")
     @classmethod
     def normalize_time(cls, value):
+        if value is None:
+            return None
         return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value

@@ -75,8 +75,7 @@ android/
 │   │   │   │   │   │   └── Type.kt
 │   │   │   │   │   ├── home/
 │   │   │   │   │   ├── shoes/
-│   │   │   │   │   ├── running/
-│   │   │   │   │   └── recommendations/
+│   │   │   │   │   └── running/
 │   │   │   │   ├── data/
 │   │   │   │   │   ├── api/
 │   │   │   │   │   │   ├── ApiServices.kt

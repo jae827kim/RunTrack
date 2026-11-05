@@ -1,6 +1,6 @@
 # 📱 RunTrack Frontend 개발 가이드
 
-**프로젝트**: RunTrack - AI 기반 맞춤형 러닝 조언 앱  
+**프로젝트**: RunTrack - 러닝 기록 관리 앱
 **담당**: Frontend Developer (Kotlin/Jetpack Compose)  
 **기간**: 10주 (9월 17일 ~ 11월 마지막주)  
 **참고**: Runday 앱의 UX/UI 디자인 패턴
@@ -26,7 +26,7 @@
 | **1주** | 9/17-9/23 | 화면 설계 + Figma 와이어프레임 | 6개 화면 와이어프레임 완성 |
 | **2주** | 9/24-9/30 | 로그인/홈 화면 개발 | 로그인, 홈 UI 구현 (MVVM 기본) |
 | **3주** | 10/1-10/7 | 기록 리스트/추가 화면 | 러닝 기록 화면 2개 구현 |
-| **4주** | 10/8-10/14 | 신발 관리 + 추천 화면 | 신발, 추천 화면 구현 |
+| **4주** | 10/8-10/14 | 신발 관리 화면 | 신발 관리 화면 구현 |
 | **5주** | 10/15-10/21 | API 연동 + 성능 최적화 | Backend API 통합 |
 | **6-7주** | 10/22-11/4 | 버그 수정 + UI 개선 | 안정성 향상 |
 | **8-9주** | 11/5-11/18 | 최종 점검 + 추가 기능 | 완성도 향상 |
@@ -118,7 +118,6 @@ android/
 │               │   │   ├── RunningListScreen.kt
 │               │   │   ├── RunningDetailScreen.kt
 │               │   │   ├── ShoeManagementScreen.kt
-│               │   │   └── RecommendationScreen.kt
 │               │   ├── viewmodels/
 │               │   │   ├── AuthViewModel.kt
 │               │   │   ├── HomeViewModel.kt
@@ -277,16 +276,6 @@ Runday 앱의 우수한 UX 특징:
 │                             │
 │ ─────────────────────────── │
 │                             │
-│ 🤖 AI 추천 신발              │
-│ ┌──────────────────────┐   │
-│ │ Nike Air Zoom        │   │
-│ │ Pegasus 41           │   │
-│ │                      │   │
-│ │ "당신의 패턴에      │   │
-│ │  최적의 신발입니다" │   │
-│ │ [자세히 보기] ▶      │   │
-│ └──────────────────────┘   │
-│                             │
 │ 🌤️  오늘 기상               │
 │ 22°C | 습도 65% | 풍속 5m/s │
 │ "좋은 날씨입니다!"           │
@@ -310,7 +299,6 @@ Runday 앱의 우수한 UX 특징:
 - [ ] **HomeScreen.kt**: 메인 대시보드 UI
 - [ ] **StatisticsChart.kt**: 주간 통계 막대 그래프
 - [ ] **WeatherWidget.kt**: 기상 정보 위젯
-- [ ] **RecommendationCard.kt**: AI 추천 카드
 - [ ] **HomeViewModel.kt**: 데이터 조회 및 통계 계산
 
 ---
@@ -536,66 +524,6 @@ Runday 앱의 우수한 UX 특징:
 
 ---
 
-## 화면 6️⃣: AI 신발 추천 화면
-
-### **UI 구조**
-
-```
-┌─────────────────────────────┐
-│ 🤖 신발 추천     [새로고침]  │
-├─────────────────────────────┤
-│                             │
-│ 1순위                       │
-│ ┌──────────────────────┐   │
-│ │ 👟 Nike Air Zoom     │   │
-│ │    Pegasus 41        │   │
-│ │                      │   │
-│ │ 💡 추천 이유:        │   │
-│ │ "당신의 신체 정보    │   │
-│ │  (75kg, 180cm)와    │   │
-│ │  최근 러닝 패턴      │   │
-│ │  (주 3회, 평균 5km) │   │
-│ │  을 고려할 때,       │   │
-│ │  가벼우면서 충분한   │   │
-│ │  쿠셔닝이 최적입니다"│   │
-│ │                      │   │
-│ │ 💰 가격대: $100-120  │   │
-│ │ 👍 장점:             │   │
-│ │    · 가벼움          │   │
-│ │    · 통풍성          │   │
-│ │    · 내구성          │   │
-│ │ 👎 단점:             │   │
-│ │    · 비용            │   │
-│ │                      │   │
-│ │ [더보기] [구매 가능] │   │
-│ └──────────────────────┘   │
-│                             │
-│ 2순위                       │
-│ ┌──────────────────────┐   │
-│ │ 👟 Adidas Ultraboost │   │
-│ │ 23                   │   │
-│ │                      │   │
-│ │ 💡 추천 이유: ...    │   │
-│ │ [더보기]             │   │
-│ └──────────────────────┘   │
-│                             │
-│ 3순위                       │
-│ ┌──────────────────────┐   │
-│ │ 👟 Asics GelNimbus   │   │
-│ │ 25                   │   │
-│ └──────────────────────┘   │
-│                             │
-│ [스크롤]                    │
-└─────────────────────────────┘
-```
-
-### **개발 항목**
-
-- [ ] **RecommendationScreen.kt**: 추천 리스트 UI
-- [ ] **RecommendationCard.kt**: 추천 카드 컴포넌트
-- [ ] **RecommendationViewModel.kt**: AI API 호출
-- [ ] **새로고침 버튼**: Pull-to-refresh 기능
-
 ---
 
 ## 🎨 디자인 가이드라인
@@ -815,10 +743,6 @@ interface ApiServices {
     @GET("running/statistics/weekly")
     suspend fun getWeeklyStats(): WeeklyStats
     
-    // Recommendations
-    @POST("recommendations/shoes")
-    suspend fun getShoeRecommendations(): List<ShoeRecommendation>
-    
     // Weather
     @GET("weather/advice")
     suspend fun getWeatherAdvice(): WeatherAdvice
@@ -845,12 +769,10 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val weeklyStats = repository.getWeeklyStats()
-                val recommendations = repository.getShoeRecommendations()
                 val weather = repository.getWeatherAdvice()
                 
                 _uiState.value = UiState.Success(
                     weeklyStats = weeklyStats,
-                    recommendations = recommendations,
                     weather = weather
                 )
             } catch (e: Exception) {
@@ -888,11 +810,10 @@ class HomeViewModel @Inject constructor(
 - [ ] 기상 정보 자동 조회
 - [ ] 기본 데이터 바인딩
 
-### **4주차: 신발/추천 화면**
+### **4주차: 신발 관리 화면**
 - [ ] ShoeManagementScreen UI
 - [ ] ShoeCard 컴포넌트
 - [ ] 신발 추가/수정/삭제 UI
-- [ ] RecommendationScreen UI
 - [ ] 카드 레이아웃
 
 ### **5주차: API 연동 + 최적화**

@@ -1,6 +1,7 @@
 package com.runtrack.data.api
 
 import com.runtrack.data.models.*
+import com.google.gson.annotations.SerializedName
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -9,21 +10,6 @@ interface UserService {
 }
 
 interface ShoeService {
-    // TODO: 신발 CRUD API 정의
-}
-
-interface RunningService {
-    // TODO: 러닝 기록 CRUD 및 통계 API 정의
-}
-
-interface WeatherService {
-    // TODO: 기상 API 정의
-}
-
-interface RecommendationService {
-    // TODO: AI 추천 API 정의
-}
-
     @PUT("api/shoes/{id}")
     suspend fun updateShoe(
         @Path("id") id: Int,
@@ -37,12 +23,21 @@ interface RecommendationService {
     suspend fun getShoeStats(@Path("id") id: Int): Response<ShoeStats>
 }
 
+data class RunningSessionEndRequest(
+    @SerializedName("distance_km") val distanceKm: Float,
+    @SerializedName("duration_minutes") val durationMinutes: Int,
+    @SerializedName("end_time") val endTime: String? = null,
+)
+
 interface RunningService {
     @POST("api/running/start")
     suspend fun startRunning(): Response<Map<String, String>>
 
     @POST("api/running/{id}/end")
-    suspend fun endRunning(@Path("id") sessionId: String): Response<RunningRecord>
+    suspend fun endRunning(
+        @Path("id") sessionId: String,
+        @Body request: RunningSessionEndRequest,
+    ): Response<RunningRecord>
 
     @GET("api/running")
     suspend fun getRunningRecords(

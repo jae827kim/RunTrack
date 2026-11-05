@@ -60,7 +60,15 @@ class RunningService:
             ).with_for_update())
             if session is None:
                 raise HTTPException(404, "Running session not found")
-            fingerprint = sha256(request.model_dump_json().encode("utf-8")).hexdigest()
+            end_time = request.end_time or (
+                session.start_time + timedelta(minutes=request.duration_minutes)
+            )
+            if end_time <= session.start_time:
+                raise HTTPException(422, "end_time must be after start_time")
+            normalized_request = request.model_copy(update={"end_time": end_time})
+            fingerprint = sha256(
+                normalized_request.model_dump_json().encode("utf-8")
+            ).hexdigest()
             if session.completed_at is not None:
                 if session.record_id is None:
                     raise HTTPException(410, "Completed running record was deleted")
@@ -69,11 +77,9 @@ class RunningService:
                 record = self.get_record(session.record_id)
                 self.db.commit()
                 return record
-            if request.end_time <= session.start_time:
-                raise HTTPException(422, "end_time must be after start_time")
             shoes = self._shoes(session.shoe_id)
             record = RunningRecord(
-                **request.model_dump(), user_id=self.user_id,
+                **normalized_request.model_dump(), user_id=self.user_id,
                 shoe_id=session.shoe_id, start_time=session.start_time,
             )
             self._metrics(record)

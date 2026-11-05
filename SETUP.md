@@ -1,6 +1,6 @@
 # 📖 RunTrack - 완전 설정 가이드
 
-> 🏃‍♂️ **AI 기반 맞춤형 러닝 조언 앱 - 풀 스택 설정 가이드**
+> 🏃‍♂️ **러닝 기록 관리 앱 - 풀 스택 설정 가이드**
 
 **GitHub Repository**: https://github.com/jae827kim/RunTrack
 
@@ -8,12 +8,12 @@
 
 ## 📅 10주 개발 일정 및 팀 역할 (9월 17일 ~ 11월 마지막주)
 
-| 주차 | 일정 | PM | Backend 1<br/>(User/Shoe) | Backend 2<br/>(Running/AI) | Frontend | DevOps & QA |
+| 주차 | 일정 | PM | Backend 1<br/>(User/Shoe) | Backend 2<br/>(Running) | Frontend | DevOps & QA |
 |------|------|-----|------|------|------|------|
 | **1주** | 9/17-9/23 | DB 설계, ERD 작성 | API 설계 | API 설계 | 화면 설계 | 환경 구축 |
 | **2주** | 9/24-9/30 | ORM 모델 작성 | 회원가입/로그인 | 러닝 기본 API | 로그인/홈 화면 | Docker Compose, CI/CD |
-| **3주** | 10/1-10/7 | Pydantic 스키마 | 신발 CRUD API | 기상/AI API | 기록/신발 화면 | 테스트 자동화 |
-| **4주** | 10/8-10/14 | 통합 테스트 작성 | API 완성 | API 완성 | 추천 화면 | 배포 파이프라인 |
+| **3주** | 10/1-10/7 | Pydantic 스키마 | 신발 CRUD API | 러닝 기록 API | 기록/신발 화면 | 테스트 자동화 |
+| **4주** | 10/8-10/14 | 통합 테스트 작성 | API 완성 | 러닝 통계 API | API 연동 화면 | 배포 파이프라인 |
 | **5주** | 10/15-10/21 | 통합 테스트 검증 | 성능 최적화 | 성능 최적화 | UI 최적화 | 성능 테스트 |
 | **6주** | 10/22-10/28 | 시스템 통합점검 | 버그 수정 | 버그 수정 | 버그 수정 | 배포 검증 |
 | **7주** | 10/29-11/4 | 통합 검증 | 최적화 | 최적화 | 최종 수정 | 배포 |
@@ -52,7 +52,6 @@ RunTrack/
 |------|------|
 | **Frontend** | Kotlin, Jetpack Compose, Android 24+ |
 | **Backend** | Python, FastAPI, PostgreSQL, Redis |
-| **AI** | Google Gemini API |
 | **External** | Google Maps, OpenWeather |
 | **DevOps** | Docker, Docker Compose, GitHub Actions |
 
@@ -119,7 +118,6 @@ CREATE DATABASE runtrack;
 cp .env.example .env
 
 # 편집 (필수):
-# GEMINI_API_KEY=your-key
 # DATABASE_URL=postgresql://user:password@localhost:5432/runtrack
 # GOOGLE_MAPS_API_KEY=your-key
 # OPENWEATHER_API_KEY=your-key
@@ -161,7 +159,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 **build.gradle.kts 수정:**
 ```kotlin
 buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"YOUR_KEY\"")
-buildConfigField("String", "GOOGLE_GEMINI_API_KEY", "\"YOUR_KEY\"")
 buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
 ```
 
@@ -242,11 +239,6 @@ GET    /api/weather/advice     - 러닝 조언 (위도, 경도 필요)
 GET    /api/weather/history    - 기상 이력
 ```
 
-**AI 추천**
-```
-POST   /api/recommendations/shoes - 신발 추천
-```
-
 ---
 
 ## 데이터베이스 설정
@@ -300,7 +292,6 @@ heroku create runtrack-api
 echo "web: uvicorn app.main:app --host 0.0.0.0 --port \$PORT" > Procfile
 
 # 환경 변수 설정
-heroku config:set GEMINI_API_KEY=your-key
 heroku config:set DATABASE_URL=postgresql://...
 heroku config:set SECRET_KEY=your-secret
 
@@ -332,11 +323,6 @@ systemctl status postgresql  # Linux
 brew services list          # macOS
 services.msc               # Windows
 ```
-
-**GEMINI_API_KEY 오류**
-- Google AI Studio에서 API 키 생성: https://makersuite.google.com/app/apikey
-- .env 파일에 추가
-- 서버 재시작
 
 **포트 충돌**
 ```bash
@@ -409,7 +395,6 @@ Android Studio > Profiler
 
 - [FastAPI 공식 문서](https://fastapi.tiangolo.com/)
 - [Jetpack Compose 가이드](https://developer.android.com/jetpack/compose)
-- [Google Gemini API](https://ai.google.dev/)
 - [PostgreSQL 튜토리얼](https://www.postgresql.org/docs/)
 
 ---

@@ -69,6 +69,25 @@ def test_default_start_is_persistent_and_recovers_without_body(runs):
     assert ended.status_code == 200 and ended.json()["shoe_id"] is None
 
 
+def test_end_calculates_end_time_and_accepts_equivalent_retry(runs):
+    client, _, headers, _, _, _ = runs
+    session = client.post("/api/running/start", json=START, headers=headers).json()
+    path = f"/api/running/{session['session_id']}/end"
+    response = client.post(
+        path,
+        json={"distance_km": 5, "duration_minutes": 30},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    record = response.json()
+    assert record["start_time"] == "2026-10-08T00:00:00"
+    assert record["end_time"] == "2026-10-08T00:30:00"
+    retry = client.post(path, json={**END, "end_time": "2026-10-08T00:30:00Z"}, headers=headers)
+    assert retry.status_code == 200
+    assert retry.json() == record
+
+
 def test_active_session_conflict_and_owner_checks(runs):
     client, factory, headers, other, shoes, _ = runs
     for shoe_id in (shoes[2], 2147483647):
