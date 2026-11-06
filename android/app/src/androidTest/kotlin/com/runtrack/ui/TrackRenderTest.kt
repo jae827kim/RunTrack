@@ -17,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withClassName
 import org.hamcrest.CoreMatchers.endsWith
 import com.runtrack.data.local.*
 import com.runtrack.ui.theme.RunTrackTheme
+import com.runtrack.ui.theme.RunTrackColors
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,6 +66,55 @@ class TrackRenderTest {
         rule.onNodeWithTag("rating").performScrollTo()
         rule.onNodeWithTag("rating").assertIsDisplayed()
         capture("run-form-bottom")
+    }
+
+    @Test fun runningListDisplaysFullRecordAndActiveNavigation() {
+        rule.setContent { RunTrackTheme { Surface(color = RunTrackColors.Background) { Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f)) { RunningScreen(example(), {}, {}, {}) }
+            TrackNavigation("runs") {}
+        } } } }
+        rule.onNodeWithTag("nav_runs").assertIsSelected()
+        rule.onNodeWithTag("nav_home").assertIsNotSelected()
+        rule.onNodeWithText("5.20 km").assertIsDisplayed()
+        rule.onNodeWithText("심박수 148 bpm").assertIsDisplayed()
+        capture("running-list")
+        rule.onNodeWithText("편집").performScrollTo().assertIsDisplayed()
+        capture("running-list-bottom")
+    }
+
+    @Test fun shoesListDisplaysLongNamesAndAccumulatedStats() {
+        rule.setContent { RunTrackTheme { Surface(color = RunTrackColors.Background) { Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f)) { ShoesScreen(example(), {}, {}, {}) }
+            TrackNavigation("shoes") {}
+        } } } }
+        rule.onNodeWithTag("nav_shoes").assertIsSelected()
+        rule.onNodeWithText("Air Zoom Pegasus 41").assertIsDisplayed()
+        rule.onNodeWithText("50.20 km").assertIsDisplayed()
+        rule.onNodeWithText("9회").assertIsDisplayed()
+        capture("shoes-list")
+    }
+
+    @Test fun aiExampleIsClearlyLabeledAndCanReturnHome() {
+        var returned = false
+        rule.setContent { RunTrackTheme { Surface(color = RunTrackColors.Background) { Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f)) { AiScreen { returned = true } }
+            TrackNavigation("ai") {}
+        } } } }
+        rule.onNodeWithText("디자인 예시 · 실제 AI 추천이 아닙니다").assertIsDisplayed()
+        capture("ai-example")
+        rule.onNodeWithText("홈으로 돌아가기").performScrollTo().performClick()
+        rule.runOnIdle { check(returned) }
+        capture("ai-example-bottom")
+    }
+
+    private fun example(): TrackSnapshot {
+        val shoe = TrackedShoe("shoe", "Nike", "Air Zoom Pegasus 41", "2026-09-01", "260mm", "화이트", "사용 중", 45.0, 8,
+            "가볍게 달리는 날 함께하는 신발")
+        val run = TrackedRun("run", LocalDate.now().atTime(7, 0).toString(), 32.0, 5.2,
+            heartRate = 148, calories = 320.0, shoeId = shoe.id, shoeName = shoe.displayName,
+            averageSpeedKmh = 9.75, rating = "great", temperatureC = 22.0,
+            notes = "천천히 시작해서 일정한 페이스로 마무리했어요.")
+        return TrackSnapshot(shoes = listOf(shoe), runs = listOf(run))
     }
 
     private fun capture(name: String) {

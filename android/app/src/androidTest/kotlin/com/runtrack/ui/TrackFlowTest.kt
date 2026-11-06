@@ -9,12 +9,21 @@ import com.runtrack.data.local.LocalTrackStore
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Rule
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class TrackFlowTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
+
+    @Before fun enterDemo() {
+        rule.onNodeWithTag("loginUsername").performTextInput("demo")
+        rule.onNodeWithTag("loginPassword").performTextInput("demo-password")
+        Espresso.closeSoftKeyboard()
+        rule.onNodeWithTag("loginSubmit").performClick()
+        rule.waitUntil(10000) { rule.onAllNodesWithTag("nav_home").fetchSemanticsNodes().isNotEmpty() }
+    }
 
     @Test fun requiredFieldsSaveEditDeleteAndRecreation() {
         rule.onNodeWithTag("nav_shoes").performClick()

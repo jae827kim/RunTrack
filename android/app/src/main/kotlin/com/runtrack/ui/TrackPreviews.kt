@@ -9,7 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.runtrack.data.local.TrackSnapshot
 import com.runtrack.data.local.TrackedRun
+import com.runtrack.data.local.TrackedShoe
+import com.runtrack.ui.theme.RunTrackColors
 import com.runtrack.ui.theme.RunTrackTheme
+import com.runtrack.ui.auth.LoginScreen
+import com.runtrack.ui.auth.SignupScreen
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -43,4 +47,53 @@ private fun ShoeEditorPreview() {
 @Composable
 private fun RunEditorPreview() {
     RunTrackTheme { Surface { RunEditor(null, emptyList(), false, {}, {}) } }
+}
+
+@Preview(name = "로그인", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
+@Composable
+private fun LoginPreview() {
+    RunTrackTheme { Surface { LoginScreen(onContinue = {}, onSignup = {}) } }
+}
+
+@Preview(name = "회원가입", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
+@Composable
+private fun SignupPreview() {
+    RunTrackTheme { Surface { SignupScreen(onBack = {}, onComplete = {}) } }
+}
+
+private fun designExample(): TrackSnapshot {
+    val shoe = TrackedShoe("preview-shoe", "Nike", "Air Zoom Pegasus 41", "2026-09-01",
+        "260mm", "화이트", "사용 중", 45.0, 8, "가볍게 달리는 날 함께하는 신발")
+    val run = TrackedRun("preview-run", LocalDate.now().atTime(7, 0).toString(), 32.0, 5.2,
+        heartRate = 148, calories = 320.0, shoeId = shoe.id, shoeName = shoe.displayName,
+        averageSpeedKmh = 9.75, rating = "great", temperatureC = 22.0,
+        notes = "천천히 시작해서 일정한 페이스로 마무리했어요.")
+    return TrackSnapshot(shoes = listOf(shoe), runs = listOf(run))
+}
+
+@Preview(name = "러닝 기록 목록", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
+@Composable
+private fun RunsPreview() {
+    RunTrackTheme { Surface(color = RunTrackColors.Background) { Column(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) { RunningScreen(designExample(), {}, {}, {}) }
+        TrackNavigation("runs") {}
+    } } }
+}
+
+@Preview(name = "신발 목록", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
+@Composable
+private fun ShoesPreview() {
+    RunTrackTheme { Surface(color = RunTrackColors.Background) { Column(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) { ShoesScreen(designExample(), {}, {}, {}) }
+        TrackNavigation("shoes") {}
+    } } }
+}
+
+@Preview(name = "AI 추천", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
+@Composable
+private fun AiPreview() {
+    RunTrackTheme { Surface(color = RunTrackColors.Background) { Column(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) { AiScreen {} }
+        TrackNavigation("ai") {}
+    } } }
 }
