@@ -20,7 +20,6 @@ class Shoe(Base):
     color = Column(String)
     
     # 구매 정보
-    purchase_price_won = Column(Integer)
     purchase_date = Column(DateTime)
     
     # 사용 통계

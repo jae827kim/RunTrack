@@ -26,9 +26,6 @@
 │   │   │   │   ├── 📄 shoes.py     # 신발 관리 API
 │   │   │   │   ├── 📄 running.py   # 러닝 기록 API
 │   │   │   │   └── 📄 weather.py   # 기상 조언 API
-│   │   │   └── 📁 ai/
-│   │   │       ├── 📄 __init__.py
-│   │   │       └── 📄 recommendations.py  # Google Gemini 통합
 │   │   ├── 📁 models/              # SQLAlchemy ORM 모델
 │   │   │   ├── 📄 __init__.py
 │   │   │   ├── 📄 user.py          # User 모델
@@ -77,10 +74,10 @@
 │   └── 📁 gradle/
 │       └── 📁 wrapper/
 │
-└── 📁 docs/                        # 추가 문서 (계획)
-    ├── 📄 API.md
-    ├── 📄 ARCHITECTURE.md
-    └── 📄 CONTRIBUTING.md
+├── 📄 PROJECT_SUMMARY.md           # 현재 구조 요약
+├── 📄 README.md                    # 프로젝트 소개
+├── 📄 ROLES.md                     # 역할 및 일정
+└── 📄 SETUP.md                     # 통합 설정 가이드
 
 ```
 
@@ -92,14 +89,12 @@
 ✅ **주요 파일**: 12개
 - FastAPI 애플리케이션 진입점
 - 4개의 API 라우트 모듈 (users, shoes, running, weather)
-- Google Gemini AI 신발 추천 서비스
 - 3개의 SQLAlchemy ORM 모델 (User, Shoe, RunningRecord)
 - 3개의 Pydantic 검증 스키마
 
 ✅ **의존성**: 45개 패키지
 - FastAPI, Uvicorn, SQLAlchemy, Pydantic
 - PostgreSQL 드라이버, Redis 클라이언트
-- google-generativeai (Gemini API)
 - pytest, httpx (테스트)
 
 ✅ **설정**: 
@@ -165,7 +160,6 @@ cd android
 ### 3️⃣ API 테스트
 - http://localhost:8000/docs (Swagger UI)
 - 신발 등록, 조회 테스트
-- AI 추천 테스트
 
 ---
 
@@ -173,7 +167,6 @@ cd android
 
 다음 키를 .env 파일에 추가하세요:
 
-1. **Google Gemini API**: https://makersuite.google.com/app/apikey
 2. **Google Maps API**: https://console.cloud.google.com/
 3. **OpenWeather API**: https://openweathermap.org/api
 4. **PostgreSQL**: 로컬 설치 또는 클라우드 서비스
@@ -203,9 +196,8 @@ cd android
 | 기능 | 상태 | 설명 |
 |------|------|------|
 | 신발 관리 | 📐 설계 완료 | 다중 신발 등록, 누적 km 추적 |
-| AI 신발 추천 | 📐 설계 완료 | Google Gemini 기반 추천 |
 | GPS 트래킹 | 📐 설계 완료 | 실시간 거리, 속도, 고도 |
-| 기상 조언 | 📐 설계 완료 | 체감온도, 러닝 점수 |
+| 기상 조언 | 📐 설계 완료 | 체감 온도 및 기상 정보 |
 | 성장 추적 | 📐 설계 완료 | 주간/월간/연간 통계 |
 | 안전 기능 | 📐 설계 완료 | 긴급 연락처 공유, 야간 알림 |
 
