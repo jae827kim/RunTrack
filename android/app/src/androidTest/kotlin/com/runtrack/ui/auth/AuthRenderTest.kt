@@ -19,7 +19,7 @@ class AuthRenderTest {
     @get:Rule val rule = createComposeRule()
 
     @Test fun loginRendersAndPromptsForMissingInput() {
-        rule.setContent { RunTrackTheme { Surface { LoginScreen(onContinue = {}, onSignup = {}) } } }
+        rule.setContent { RunTrackTheme { Surface { LoginScreen(onContinue = { _, _ -> }, onSignup = {}) } } }
         capture("login")
         rule.onNodeWithTag("loginSubmit").performClick()
         Espresso.closeSoftKeyboard()
@@ -36,6 +36,24 @@ class AuthRenderTest {
         rule.onNodeWithTag("signupWeight").assertIsDisplayed()
         rule.onNodeWithTag("signupSubmit").assertIsDisplayed()
         capture("signup-bottom")
+    }
+
+    @Test fun usernameCheckUsesRequestedCopyAndClearsWhenInputChanges() {
+        rule.setContent { RunTrackTheme { Surface { SignupScreen(onBack = {}, onComplete = {}) } } }
+        rule.onNodeWithText("중복확인").assertIsDisplayed()
+        rule.onNodeWithText("입력 확인").assertDoesNotExist()
+        rule.onNodeWithTag("signupUsername").performTextInput("test_runner")
+        Espresso.closeSoftKeyboard()
+        rule.onNodeWithTag("checkUsername").performClick()
+        rule.onNodeWithText("사용 가능한 아이디입니다").assertIsDisplayed()
+        capture("signup-available")
+        rule.onNodeWithTag("signupUsername").performTextReplacement("another_runner")
+        rule.onNodeWithTag("usernameAvailable").assertDoesNotExist()
+        rule.onNodeWithTag("signupUsername").performTextReplacement("admin")
+        Espresso.closeSoftKeyboard()
+        rule.onNodeWithTag("checkUsername").performClick()
+        rule.onNodeWithText("이미 사용 중인 아이디입니다.").assertIsDisplayed()
+        rule.onNodeWithTag("usernameAvailable").assertDoesNotExist()
     }
 
     private fun capture(name: String) {

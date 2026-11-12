@@ -19,7 +19,9 @@ data class TrackedShoe(
     val condition: String? = null,
     val openingDistanceKm: Double? = null,
     val openingRunCount: Int? = null,
-    val notes: String? = null
+    val notes: String? = null,
+    val serverDistanceKm: Double? = null,
+    val serverRunCount: Int? = null
 ) {
     val displayName: String get() = "$brand $model"
 }
@@ -55,9 +57,9 @@ data class TrackSnapshot(
         shoes = shoes.filterNot { it.id == id },
         runs = runs.map { if (it.shoeId == id) it.copy(shoeId = null) else it }
     )
-    fun shoeDistance(shoe: TrackedShoe) = (shoe.openingDistanceKm ?: 0.0) +
-        runs.filter { it.shoeId == shoe.id }.sumOf { it.distanceKm }
-    fun shoeRunCount(shoe: TrackedShoe) = (shoe.openingRunCount ?: 0) + runs.count { it.shoeId == shoe.id }
+    fun shoeDistance(shoe: TrackedShoe) = shoe.serverDistanceKm ?: ((shoe.openingDistanceKm ?: 0.0) +
+        runs.filter { it.shoeId == shoe.id }.sumOf { it.distanceKm })
+    fun shoeRunCount(shoe: TrackedShoe) = shoe.serverRunCount ?: ((shoe.openingRunCount ?: 0) + runs.count { it.shoeId == shoe.id })
     fun recentRuns() = runs.sortedByDescending { LocalDateTime.parse(it.startTime) }.take(3)
     fun weekSummary(today: LocalDate): WeekSummary {
         val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -93,7 +95,7 @@ data class ShoeDraft(
     }
     companion object {
         fun from(shoe: TrackedShoe) = ShoeDraft(shoe.brand, shoe.model, shoe.size.orEmpty(), shoe.color.orEmpty(),
-            shoe.purchaseDate, shoe.condition.orEmpty(), shoe.openingDistanceKm?.let(::number).orEmpty(),
+            shoe.purchaseDate.ifBlank { LocalDate.now().toString() }, shoe.condition.orEmpty(), shoe.openingDistanceKm?.let(::number).orEmpty(),
             shoe.openingRunCount?.toString().orEmpty(), shoe.notes.orEmpty())
     }
 }
@@ -104,9 +106,11 @@ data class RunDraft(
     val heartRate: String = "", val calories: String = "", val shoeId: String = "",
     val speed: String = "", val rating: String = "", val temperature: String = "", val notes: String = ""
 ) : Serializable {
-    fun errors(): Map<String, String> = buildMap {
+    fun errors(wholeMinutesOnly: Boolean = false): Map<String, String> = buildMap {
         if (runCatching { LocalDateTime.parse(startTime) }.isFailure) put("startTime", "시작 날짜와 시간을 선택해 주세요.")
         if (positive(duration) == null) put("duration", "0보다 큰 러닝 시간을 입력해 주세요.")
+        else if (wholeMinutesOnly && duration.toIntOrNull()?.let { it > 0 } != true)
+            put("duration", "러닝 시간은 1 이상의 정수(분)로 입력해 주세요.")
         if (positive(distance) == null) put("distance", "0보다 큰 거리를 입력해 주세요.")
         if (pace.isNotBlank() && parsePace(pace) == null) put("pace", "6:09 또는 6.15 형식으로 입력해 주세요.")
         if (heartRate.isNotBlank() && (heartRate.toIntOrNull() == null || heartRate.toIntOrNull()!! <= 0)) put("heartRate", "0보다 큰 정수를 입력해 주세요.")
@@ -135,6 +139,13 @@ data class RunDraft(
 private fun String.blankToNull() = trim().takeIf { it.isNotEmpty() }
 fun nonNegative(value: String): Double? = value.trim().toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0 }
 fun positive(value: String): Double? = nonNegative(value)?.takeIf { it > 0 }
+/** Server-derived values and read-only metrics must not prevent editing supported fields. */
+fun RunDraft.apiErrors(editing: Boolean = false): Map<String, String> = copy(
+    pace = "", speed = "", calories = "",
+    heartRate = if (editing) "" else heartRate,
+    temperature = if (editing) "" else temperature
+).errors(wholeMinutesOnly = true)
+
 fun parsePace(value: String): Double? {
     val parts = value.trim().split(':')
     if (parts.size == 1) return positive(value)

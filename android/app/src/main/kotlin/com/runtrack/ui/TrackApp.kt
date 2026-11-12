@@ -45,7 +45,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null) {
+fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null, isOfflineAdmin: Boolean = false) {
     val state by vm.state.collectAsStateWithLifecycle()
     var screen by rememberSaveable { mutableStateOf("home") }
     var editId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -57,30 +57,40 @@ fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null) {
         if (!state.saving) screen = when (screen) { "shoeEditor" -> "shoes"; "runEditor" -> "runs"; else -> "home" }
     }
     Surface(Modifier.fillMaxSize(), color = RunTrackColors.Background) {
-        when {
-            state.loading -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
-                CircularProgressIndicator(Modifier.size(32.dp), strokeWidth = 3.dp)
-                Text("러닝 기록을 불러오고 있어요", style = MaterialTheme.typography.bodyMedium, color = RunTrackColors.Muted)
+        Column(Modifier.fillMaxSize()) {
+            if (isOfflineAdmin) Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).padding(horizontal = 20.dp).testTag("adminMode"),
+                horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Badge("관리자 계정")
+                Text("오프라인", style = MaterialTheme.typography.bodySmall, color = RunTrackColors.Muted)
             }
-            state.loadFailed -> Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
-                EmptyStateCard("기록을 불러오지 못했어요.", state.error ?: "잠시 후 다시 시도해 주세요.",
-                    "다시 불러오기", Icons.Outlined.Refresh, action = vm::reload)
-            }
-            screen == "shoeEditor" -> ShoeEditor(state.data.shoes.find { it.id == editId }, state.saving,
-                close = { navigate("shoes") }, save = { vm.saveShoe(it, editId) { navigate("shoes") } })
-            screen == "runEditor" -> RunEditor(state.data.runs.find { it.id == editId }, state.data.shoes, state.saving,
-                close = { navigate("runs") }, save = { vm.saveRun(it, editId) { navigate("runs") } })
-            else -> Column(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f)) {
-                    when (screen) {
-                        "runs" -> RunningScreen(state.data, { navigate("runEditor") }, { navigate("runEditor", it) }, { removeRun = it })
-                        "shoes" -> ShoesScreen(state.data, { navigate("shoeEditor") }, { navigate("shoeEditor", it) }, { removeShoe = it })
-                        "ai" -> AiScreen { navigate("home") }
-                        else -> HomeScreen(state.data, { navigate("ai") }, { settings = true }, { navigate("runEditor") })
+            Box(Modifier.weight(1f)) {
+                when {
+                    state.loading -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)) {
+                        CircularProgressIndicator(Modifier.size(32.dp), strokeWidth = 3.dp)
+                        Text("러닝 기록을 불러오고 있어요", style = MaterialTheme.typography.bodyMedium, color = RunTrackColors.Muted)
+                    }
+                    state.loadFailed -> Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center) {
+                        EmptyStateCard("기록을 불러오지 못했어요.", state.error ?: "잠시 후 다시 시도해 주세요.",
+                            "다시 불러오기", Icons.Outlined.Refresh, action = vm::reload)
+                        if (onLogout != null) TextButton(onClick = onLogout, modifier = Modifier.testTag("logout")) { Text("로그아웃") }
+                    }
+                    screen == "shoeEditor" -> ShoeEditor(state.data.shoes.find { it.id == editId }, state.saving,
+                        close = { navigate("shoes") }, save = { vm.saveShoe(it, editId) { navigate("shoes") } }, serverMode = !isOfflineAdmin)
+                    screen == "runEditor" -> RunEditor(state.data.runs.find { it.id == editId }, state.data.shoes, state.saving,
+                        close = { navigate("runs") }, save = { vm.saveRun(it, editId) { navigate("runs") } }, serverMode = !isOfflineAdmin)
+                    else -> Column(Modifier.fillMaxSize()) {
+                        Box(Modifier.weight(1f)) {
+                            when (screen) {
+                                "runs" -> RunningScreen(state.data, { navigate("runEditor") }, { navigate("runEditor", it) }, { removeRun = it })
+                                "shoes" -> ShoesScreen(state.data, { navigate("shoeEditor") }, { navigate("shoeEditor", it) }, { removeShoe = it })
+                                "ai" -> AiScreen { navigate("home") }
+                                else -> HomeScreen(state.data, { navigate("ai") }, { settings = true }, { navigate("runEditor") }, weatherContent = { HomeWeather() })
+                            }
+                        }
+                        TrackNavigation(screen) { navigate(it) }
                     }
                 }
-                TrackNavigation(screen) { navigate(it) }
             }
         }
     }
@@ -89,7 +99,7 @@ fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null) {
             confirmButton = { TextButton(onClick = vm::clearError) { Text("확인") } })
     }
     removeShoe?.let { id ->
-        DeleteDialog("신발을 삭제할까요?", "러닝 기록은 유지되고, 과거 기록에는 당시 신발 이름이 남습니다.", { removeShoe = null }) {
+        DeleteDialog("신발을 삭제할까요?", if (isOfflineAdmin) "러닝 기록과 당시 신발 이름은 유지됩니다." else "러닝 기록은 유지되지만 이 신발의 연결 정보는 해제됩니다.", { removeShoe = null }) {
             vm.deleteShoe(id); removeShoe = null
         }
     }
@@ -98,8 +108,8 @@ fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null) {
             vm.deleteRun(id); removeRun = null
         }
     }
-    if (settings) AlertDialog(onDismissRequest = { settings = false }, title = { Text("기록 저장 안내") },
-        text = { Text("기록은 이 기기에 저장됩니다. 앱을 삭제하면 저장한 기록도 삭제됩니다.") },
+    if (settings) AlertDialog(onDismissRequest = { settings = false }, title = { Text("계정 및 기록") },
+        text = { Text(if (isOfflineAdmin) "관리자 계정 · 오프라인\n기록은 이 기기에 저장됩니다." else "기록은 로그인한 계정의 서버에 저장됩니다.") },
         confirmButton = { TextButton(onClick = { settings = false }) { Text("확인") } },
         dismissButton = {
             if (onLogout != null) TextButton(onClick = { settings = false; onLogout() }, modifier = Modifier.testTag("logout")) { Text("로그아웃") }
@@ -107,7 +117,8 @@ fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null) {
 }
 
 @Composable
-fun HomeScreen(data: TrackSnapshot, ai: () -> Unit, settings: () -> Unit, add: () -> Unit) {
+fun HomeScreen(data: TrackSnapshot, ai: () -> Unit, settings: () -> Unit, add: () -> Unit,
+               weatherContent: (@Composable () -> Unit)? = null) {
     val summary = data.weekSummary(LocalDate.now())
     val monday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     Column(Modifier.fillMaxSize().background(RunTrackColors.Background)) {
@@ -149,6 +160,7 @@ fun HomeScreen(data: TrackSnapshot, ai: () -> Unit, settings: () -> Unit, add: (
                 WeeklyMetric("평균 페이스", "${paceText(summary.pace)} /km", Icons.Outlined.Timer,
                     Modifier.weight(1f).testTag("weekPace"))
             }
+            weatherContent?.invoke()
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("최근 러닝 기록 3개", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 TextButton(onClick = ai, modifier = Modifier.testTag("openAi"), contentPadding = PaddingValues(horizontal = 6.dp)) {
@@ -281,7 +293,7 @@ internal fun ShoesScreen(data: TrackSnapshot, add: () -> Unit, edit: (String) ->
                         MetricCaption("사이즈", shoe.size ?: "—", Modifier.weight(1f))
                         MetricCaption("색상", shoe.color ?: "—", Modifier.weight(1f))
                     }
-                    Text("구매일  ${shoe.purchaseDate}", style = MaterialTheme.typography.bodySmall, color = RunTrackColors.Muted)
+                    Text("구매일  ${shoe.purchaseDate.ifBlank { "미입력" }}", style = MaterialTheme.typography.bodySmall, color = RunTrackColors.Muted)
                     shoe.notes?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = RunTrackColors.Muted) }
                     EditActions({ edit(shoe.id) }, { delete(shoe.id) })
                 }
@@ -296,7 +308,7 @@ internal fun AiScreen(back: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("AI 신발 추천", "새로고침", action = { message = true })
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            InformationNote("디자인 예시 · 실제 AI 추천이 아닙니다")
+            Badge("AI 추천 예시")
             SectionHeading("나의 러닝에 맞는 한 켤레", "나에게 맞는 쿠셔닝과 착화감을 살펴보세요.")
             RunTrackCard {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -311,7 +323,7 @@ internal fun AiScreen(back: () -> Unit) {
                 Divider()
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     MetricCaption("장점", "가벼움 · 통풍성\n내구성", Modifier.weight(1f), Icons.Outlined.CheckCircle)
-                    MetricCaption("고려할 점", "비용", Modifier.weight(1f), Icons.Outlined.Info)
+                    MetricCaption("고려할 점", "비용", Modifier.weight(1f))
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedButton(onClick = { message = true }, Modifier.weight(1f)) { Text("더보기") }

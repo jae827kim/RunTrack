@@ -20,6 +20,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
@@ -31,7 +32,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.runtrack.R
 import androidx.compose.foundation.background
@@ -43,46 +48,47 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import com.runtrack.ui.*
 import com.runtrack.ui.theme.RunTrackColors
-
-/** In-memory navigation for UI trials; it never authenticates or stores credentials. */
-class AuthDemoViewModel : ViewModel() {
-    var enteredDemo by mutableStateOf(false)
-        private set
-    var signingUp by mutableStateOf(false)
-        private set
-    var suggestedUsername by mutableStateOf("")
-        private set
-    var registrationReviewed by mutableStateOf(false)
-        private set
-
-    fun showSignup() { signingUp = true; registrationReviewed = false }
-    fun showLogin() { signingUp = false }
-    fun registrationFinished(username: String) {
-        suggestedUsername = username.trim()
-        registrationReviewed = true
-        signingUp = false
-    }
-    fun enterDemo() { enteredDemo = true; registrationReviewed = false }
-    fun signOut() {
-        enteredDemo = false
-        signingUp = false
-        suggestedUsername = ""
-        registrationReviewed = false
-    }
-}
+import com.runtrack.data.local.LocalTrackStore
+import com.runtrack.data.repository.LocalAdminTrackRepository
+import com.runtrack.data.repository.RemoteTrackRepository
 
 @Composable
-fun RunTrackEntry(model: AuthDemoViewModel = viewModel()) {
+fun RunTrackEntry(model: AuthViewModel = viewModel()) {
+    val session by model.session.collectAsStateWithLifecycle()
     when {
-        model.enteredDemo -> TrackApp(onLogout = model::signOut)
+        session != null -> {
+            val signedIn = session!!
+            val context = LocalContext.current.applicationContext
+            val owner = remember(signedIn.instanceId) { object : ViewModelStoreOwner {
+                override val viewModelStore = ViewModelStore()
+            } }
+            val factory = remember(signedIn.instanceId) {
+                val repository = if (signedIn.isOfflineAdmin)
+                    LocalAdminTrackRepository(LocalTrackStore(context, LocalAdminTrackRepository.PREFERENCES_NAME))
+                else RemoteTrackRepository()
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        require(modelClass == TrackViewModel::class.java)
+                        return TrackViewModel(repository) as T
+                    }
+                }
+            }
+            DisposableEffect(owner) { onDispose { owner.viewModelStore.clear() } }
+            key(signedIn.instanceId) {
+                TrackApp(vm = viewModel(viewModelStoreOwner = owner, factory = factory), onLogout = model::signOut,
+                    isOfflineAdmin = signedIn.isOfflineAdmin)
+            }
+        }
         model.signingUp -> {
-            BackHandler(onBack = model::showLogin)
-            SignupScreen(onBack = model::showLogin, onComplete = model::registrationFinished)
+            BackHandler(enabled = !model.busy, onBack = model::showLogin)
+            SignupScreen(busy = model.busy, serverError = model.error, onBack = model::showLogin, onComplete = model::register)
         }
         else -> LoginScreen(
             initialUsername = model.suggestedUsername,
             registrationReviewed = model.registrationReviewed,
-            onContinue = model::enterDemo,
+            busy = model.busy, serverError = model.error,
+            onContinue = model::login,
             onSignup = model::showSignup
         )
     }
@@ -90,109 +96,112 @@ fun RunTrackEntry(model: AuthDemoViewModel = viewModel()) {
 
 @Composable
 fun LoginScreen(initialUsername: String = "", registrationReviewed: Boolean = false,
-                onContinue: () -> Unit, onSignup: () -> Unit) {
+                busy: Boolean = false, serverError: String? = null,
+                onContinue: (String, String) -> Unit, onSignup: () -> Unit) {
     var username by rememberSaveable(initialUsername) { mutableStateOf(initialUsername) }
     var password by remember { mutableStateOf("") }
     var submitted by remember { mutableStateOf(false) }
-    var recovery by remember { mutableStateOf(false) }
     val errors = if (submitted) AuthValidation.login(username, password) else emptyMap()
     val focus = LocalFocusManager.current
     val usernameFocus = remember { FocusRequester() }
     val passwordFocus = remember { FocusRequester() }
     val submit: () -> Unit = {
+        if (!busy) {
         submitted = true
         val result = AuthValidation.login(username, password)
         when {
             "username" in result -> usernameFocus.requestFocus()
             "password" in result -> passwordFocus.requestFocus()
-            else -> { focus.clearFocus(); password = ""; onContinue() }
+            else -> { focus.clearFocus(); onContinue(username.trim(), password) }
+        }
         }
     }
     Column(Modifier.fillMaxSize().background(RunTrackColors.Background).imePadding().testTag("loginScreen")) {
         AuthBrand(R.drawable.auth_logo_login)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AuthIntro("다시 만나 반가워요", "오늘도 나만의 페이스로 달려볼까요?")
-            AuthTabs(false, {}, { password = ""; onSignup() })
-            InformationNote(if (registrationReviewed) "회원가입 입력을 확인했어요. 체험용 로그인을 진행해 주세요." else "임의의 아이디와 비밀번호로 화면을 체험할 수 있어요.",
-                if (registrationReviewed) Modifier.testTag("registrationReviewed") else Modifier)
+            AuthTabs(false, {}, { password = ""; onSignup() }, enabled = !busy)
+            if (registrationReviewed) Text("회원가입이 완료됐습니다.", Modifier.testTag("registrationReviewed"),
+                style = MaterialTheme.typography.bodyMedium, color = RunTrackColors.Accent)
             RunTrackCard {
+                if (serverError != null) Text(serverError, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("authError"), style = MaterialTheme.typography.bodyMedium)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     FieldLabel("아이디")
-                    AuthInput(username, { username = it }, "아이디를 입력하세요", "loginUsername", errors["username"], usernameFocus, description = "아이디")
+                    AuthInput(username, { username = it }, "", "loginUsername", errors["username"], usernameFocus, description = "아이디", enabled = !busy)
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     FieldLabel("비밀번호")
-                    AuthInput(password, { password = it }, "비밀번호를 입력하세요", "loginPassword", errors["password"], passwordFocus,
-                        password = true, ime = ImeAction.Done, done = submit, description = "비밀번호")
+                    AuthInput(password, { password = it }, "", "loginPassword", errors["password"], passwordFocus,
+                        password = true, ime = ImeAction.Done, done = submit, description = "비밀번호", enabled = !busy)
                 }
-                PrimaryActionButton("로그인", submit, Modifier.testTag("loginSubmit"))
-            }
-            TextButton(onClick = { recovery = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                Text("비밀번호 찾기", color = RunTrackColors.Muted)
+                PrimaryActionButton("로그인", submit, Modifier.testTag("loginSubmit"), busy = busy)
             }
         }
     }
-    if (recovery) AlertDialog(onDismissRequest = { recovery = false }, title = { Text("비밀번호 찾기") },
-        text = { Text("지금은 화면 체험 단계예요. 실제 계정과 비밀번호 복구는 아직 연결되지 않았어요.") },
-        confirmButton = { TextButton(onClick = { recovery = false }) { Text("확인") } })
 }
 
 @Composable
-fun SignupScreen(onBack: () -> Unit, onComplete: (String) -> Unit) {
+fun SignupScreen(busy: Boolean = false, serverError: String? = null, onBack: () -> Unit, onComplete: (SignupInput) -> Unit) {
     var username by rememberSaveable { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
-    var name by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
     var weight by rememberSaveable { mutableStateOf("") }
     var submitted by remember { mutableStateOf(false) }
     var checkedId by remember { mutableStateOf<String?>(null) }
     var idCheckRequested by remember { mutableStateOf(false) }
-    val errors = if (submitted) AuthValidation.signup(SignupInput(username, password, confirmation, name, weight)) else emptyMap()
+    fun validate(input: SignupInput) = AuthValidation.signup(input).toMutableMap().apply {
+        if (OfflineAdminAccount.isReserved(input.username)) put("username", "이미 사용 중인 아이디입니다.")
+    }
+    val errors = if (submitted) validate(SignupInput(username, password, confirmation, email, weight)) else emptyMap()
     val focus = LocalFocusManager.current
-    val requests = remember { listOf("username", "password", "confirmation", "name", "weight").associateWith { FocusRequester() } }
+    val requests = remember { listOf("username", "password", "confirmation", "email", "weight").associateWith { FocusRequester() } }
     val submit: () -> Unit = {
+        if (!busy) {
         submitted = true
-        val result = AuthValidation.signup(SignupInput(username, password, confirmation, name, weight))
+        val input = SignupInput(username, password, confirmation, email, weight)
+        val result = validate(input)
         if (result.isEmpty()) {
-            focus.clearFocus(); password = ""; confirmation = ""; onComplete(username)
+            focus.clearFocus(); onComplete(input)
         } else requests.getValue(result.keys.first()).requestFocus()
+        }
     }
     Column(Modifier.fillMaxSize().background(RunTrackColors.Background).imePadding().testTag("signupScreen")) {
         AuthBrand(R.drawable.auth_logo_signup)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AuthIntro("함께 달릴 준비가 됐나요?", "기본 정보를 입력하고 RunTrack을 둘러보세요.")
-            AuthTabs(true, { password = ""; confirmation = ""; onBack() }, {})
-            InformationNote("화면 체험용 · 실제 계정은 생성되지 않아요.")
+            AuthTabs(true, { password = ""; confirmation = ""; onBack() }, {}, enabled = !busy)
             RunTrackCard {
+                if (serverError != null) Text(serverError, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("authError"), style = MaterialTheme.typography.bodyMedium)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     FieldLabel("아이디")
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                        AuthInput(username, { username = it; checkedId = null }, "아이디 입력", "signupUsername",
+                        AuthInput(username, { username = it; checkedId = null; idCheckRequested = false }, "", "signupUsername",
                             errors["username"] ?: if (idCheckRequested) AuthValidation.usernameError(username) else null,
-                            requests.getValue("username"), modifier = Modifier.weight(1f), description = "아이디")
+                            requests.getValue("username"), modifier = Modifier.weight(1f), description = "아이디", enabled = !busy)
                         OutlinedButton(onClick = {
                             idCheckRequested = true
-                            if (AuthValidation.usernameError(username) == null) checkedId = username.trim()
+                            // UI-only confirmation: the backend's registration still enforces uniqueness.
+                            if (AuthValidation.usernameError(username) == null && !OfflineAdminAccount.isReserved(username)) checkedId = username.trim()
                             else requests.getValue("username").requestFocus()
-                        }, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 8.dp),
+                        }, enabled = !busy, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 8.dp),
                             modifier = Modifier.width(82.dp).height(56.dp).testTag("checkUsername")) {
                             Text("중복확인", style = MaterialTheme.typography.labelMedium)
                         }
                     }
-                    if (checkedId == username.trim()) Text("아이디 입력을 확인했어요. 실제 중복 확인은 계정 서비스 연결 후 가능해요.",
-                        style = MaterialTheme.typography.bodySmall, color = RunTrackColors.Muted)
+                    if (idCheckRequested && OfflineAdminAccount.isReserved(username) && "username" !in errors) Text("이미 사용 중인 아이디입니다.",
+                        color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    else if (checkedId == username.trim() && serverError == null) Text("사용 가능한 아이디입니다",
+                        modifier = Modifier.testTag("usernameAvailable"), style = MaterialTheme.typography.bodySmall, color = RunTrackColors.Accent)
                 }
-                SignupField("비밀번호", password, { password = it }, "8자 이상 입력", "signupPassword", errors["password"], requests.getValue("password"), password = true)
-                SignupField("비밀번호 확인", confirmation, { confirmation = it }, "한 번 더 입력하세요", "signupConfirmation", errors["confirmation"], requests.getValue("confirmation"), password = true)
-                SignupField("이름 (한글/영문, 최대 50자)", name, { name = it }, "이름 입력", "signupName", errors["name"], requests.getValue("name"))
-                SignupField("체중 (kg, 숫자만)", weight, { weight = it }, "예: 70.5", "signupWeight", errors["weight"], requests.getValue("weight"), keyboard = KeyboardType.Decimal, ime = ImeAction.Done, done = submit)
+                SignupField("비밀번호", password, { password = it }, "8자 이상 입력", "signupPassword", errors["password"], requests.getValue("password"), password = true, enabled = !busy)
+                SignupField("비밀번호 확인", confirmation, { confirmation = it }, "", "signupConfirmation", errors["confirmation"], requests.getValue("confirmation"), password = true, enabled = !busy)
+                SignupField("이메일", email, { email = it }, "runner@example.com", "signupEmail", errors["email"], requests.getValue("email"), keyboard = KeyboardType.Email, enabled = !busy)
+                SignupField("체중 (kg, 숫자만)", weight, { weight = it }, "예: 70.5", "signupWeight", errors["weight"], requests.getValue("weight"), keyboard = KeyboardType.Decimal, ime = ImeAction.Done, done = submit, enabled = !busy)
             }
-            TextButton(onClick = { password = ""; confirmation = ""; onBack() }, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("로그인으로 돌아가기") }
         }
         Surface(shadowElevation = 6.dp, color = RunTrackColors.Surface) {
-            Box(Modifier.padding(20.dp)) { PrimaryActionButton("가입완료", submit, Modifier.testTag("signupSubmit")) }
+            Box(Modifier.padding(20.dp)) { PrimaryActionButton("가입완료", submit, Modifier.testTag("signupSubmit"), busy = busy) }
         }
     }
 }
@@ -205,26 +214,17 @@ private fun AuthBrand(logo: Int) {
         }
         Spacer(Modifier.width(10.dp))
         Text("RunTrack", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
-        Badge("체험 모드")
     }
 }
 
 @Composable
-private fun AuthIntro(title: String, subtitle: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(title, style = MaterialTheme.typography.headlineMedium)
-        Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = RunTrackColors.Muted)
-    }
-}
-
-@Composable
-private fun AuthTabs(signup: Boolean, login: () -> Unit, join: () -> Unit) {
+private fun AuthTabs(signup: Boolean, login: () -> Unit, join: () -> Unit, enabled: Boolean = true) {
     Row(Modifier.fillMaxWidth().background(RunTrackColors.Selection, RoundedCornerShape(16.dp)).padding(4.dp)) {
         listOf("로그인", "회원가입").forEachIndexed { index, label ->
             val active = (index == 1) == signup
             Box(Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(12.dp))
                 .background(if (active) RunTrackColors.Surface else Color.Transparent)
-                .semantics { selected = active }.clickable(role = Role.Tab, onClick = if (index == 0) login else join)
+                .semantics { selected = active }.clickable(enabled = enabled, role = Role.Tab, onClick = if (index == 0) login else join)
                 .testTag(if (index == 1 && !signup) "openSignup" else "authTab$index"), contentAlignment = Alignment.Center) {
                 Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
                     color = if (active) RunTrackColors.Accent else RunTrackColors.Muted)
@@ -236,10 +236,10 @@ private fun AuthTabs(signup: Boolean, login: () -> Unit, join: () -> Unit) {
 @Composable
 private fun SignupField(label: String, value: String, change: (String) -> Unit, hint: String, tag: String,
                         error: String?, requester: FocusRequester, password: Boolean = false,
-                        keyboard: KeyboardType = KeyboardType.Text, ime: ImeAction = ImeAction.Next, done: (() -> Unit)? = null) {
+                        keyboard: KeyboardType = KeyboardType.Text, ime: ImeAction = ImeAction.Next, done: (() -> Unit)? = null, enabled: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         FieldLabel(label)
-        AuthInput(value, change, hint, tag, error, requester, password = password, keyboard = keyboard, ime = ime, done = done, description = label)
+        AuthInput(value, change, hint, tag, error, requester, password = password, keyboard = keyboard, ime = ime, done = done, description = label, enabled = enabled)
     }
 }
 
@@ -247,11 +247,11 @@ private fun SignupField(label: String, value: String, change: (String) -> Unit, 
 private fun AuthInput(value: String, change: (String) -> Unit, hint: String, tag: String, error: String?,
                       requester: FocusRequester, modifier: Modifier = Modifier, password: Boolean = false,
                       keyboard: KeyboardType = KeyboardType.Text, ime: ImeAction = ImeAction.Next, done: (() -> Unit)? = null,
-                      description: String = hint) {
+                      description: String = hint, enabled: Boolean = true) {
     val focus = LocalFocusManager.current
     var revealed by remember { mutableStateOf(false) }
     OutlinedTextField(value, change, modifier.fillMaxWidth().focusRequester(requester).testTag(tag).semantics { contentDescription = description },
-        singleLine = true, placeholder = if (hint.isNotEmpty()) {{ Text(hint, style = MaterialTheme.typography.bodyMedium) }} else null,
+        enabled = enabled, singleLine = true, placeholder = if (hint.isNotEmpty()) {{ Text(hint, style = MaterialTheme.typography.bodyMedium) }} else null,
         leadingIcon = when (tag) {
             "loginUsername" -> {{ Icon(Icons.Outlined.PersonOutline, null, Modifier.size(20.dp), tint = RunTrackColors.Muted) }}
             "loginPassword" -> {{ Icon(Icons.Outlined.Lock, null, Modifier.size(20.dp), tint = RunTrackColors.Muted) }}

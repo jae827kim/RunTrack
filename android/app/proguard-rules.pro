@@ -4,4 +4,8 @@
 -keep class com.runtrack.data.api.WeatherHistory { *; }
 -keep class com.runtrack.data.api.Location { *; }
 -keep class com.runtrack.data.api.WeatherData { *; }
+-keep class com.runtrack.data.api.RunningSessionEndRequest { *; }
 -keep class com.runtrack.data.local.** { *; }
+-keep class com.runtrack.data.weather.ForecastResponse { *; }
+-keep class com.runtrack.data.weather.ForecastCurrent { *; }
+-keep class com.runtrack.data.weather.ForecastUnits { *; }

@@ -29,7 +29,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun ShoeEditor(shoe: TrackedShoe?, busy: Boolean, close: () -> Unit, save: (ShoeDraft) -> Unit) {
+fun ShoeEditor(shoe: TrackedShoe?, busy: Boolean, close: () -> Unit, save: (ShoeDraft) -> Unit, serverMode: Boolean = false) {
     var draft by rememberSaveable(shoe?.id) { mutableStateOf(shoe?.let(ShoeDraft::from) ?: ShoeDraft()) }
     var submitted by rememberSaveable { mutableStateOf(false) }
     val errors = if (submitted) draft.errors() else emptyMap()
@@ -43,16 +43,20 @@ fun ShoeEditor(shoe: TrackedShoe?, busy: Boolean, close: () -> Unit, save: (Shoe
         FormField("모델명 *", draft.model, { draft = draft.copy(model = it) }, "예: Air Zoom Pegasus", "model", errors["model"])
         ChoiceField("사이즈 (선택)", draft.size, (200..330 step 5).map { "$it mm" }, "size") { draft = draft.copy(size = it) }
         FormField("색상 (선택)", draft.color, { draft = draft.copy(color = it) }, "예: Black", "color")
-        PickerField("구매 날짜 *", draft.purchaseDate, "purchaseDate", errors["purchaseDate"]) {
+        PickerField(if (serverMode && shoe != null) "구매 날짜 (등록 후 변경 불가)" else "구매 날짜 *",
+            if (serverMode && shoe != null) shoe.purchaseDate.ifBlank { "미입력" } else draft.purchaseDate,
+            "purchaseDate", errors["purchaseDate"], enabled = !serverMode || shoe == null) {
             pickDate(context, LocalDate.parse(draft.purchaseDate)) { draft = draft.copy(purchaseDate = it.toString()) }
         }
         }
         FormSection("사용 기록") {
         ChoiceField("신발 상태 (선택)", draft.condition, listOf("양호", "사용 중", "교체 권장", "폐기"), "condition") { draft = draft.copy(condition = it) }
+        if (!serverMode) {
         FormField("누적 거리 (km, 선택)", draft.distance, { draft = draft.copy(distance = it) }, "예: 120.5", "shoeDistance", errors["distance"], KeyboardType.Decimal,
             helper = "앱에 등록하기 전 누적 거리")
         FormField("러닝 횟수 (선택)", draft.count, { draft = draft.copy(count = it) }, "예: 24", "shoeCount", errors["count"], KeyboardType.Number,
             helper = "앱에 등록하기 전 러닝 횟수")
+        }
         }
         FormSection("메모") {
         FormField("메모 (선택)", draft.notes, { draft = draft.copy(notes = it) }, "신발에 대한 메모를 남겨보세요", "shoeNotes", multiline = true)
@@ -61,14 +65,14 @@ fun ShoeEditor(shoe: TrackedShoe?, busy: Boolean, close: () -> Unit, save: (Shoe
 }
 
 @Composable
-fun RunEditor(run: TrackedRun?, shoes: List<TrackedShoe>, busy: Boolean, close: () -> Unit, save: (RunDraft) -> Unit) {
+fun RunEditor(run: TrackedRun?, shoes: List<TrackedShoe>, busy: Boolean, close: () -> Unit, save: (RunDraft) -> Unit, serverMode: Boolean = false) {
     var draft by rememberSaveable(run?.id) { mutableStateOf(run?.let(RunDraft::from) ?: RunDraft()) }
     var submitted by rememberSaveable { mutableStateOf(false) }
-    val errors = if (submitted) draft.errors() else emptyMap()
+    val errors = if (submitted) { if (serverMode) draft.apiErrors(editing = run != null) else draft.errors() } else emptyMap()
     val context = LocalContext.current
     EditorFrame(if (run == null) "러닝 기록 추가" else "러닝 기록 편집", busy, close, {
         submitted = true
-        if (draft.errors().isEmpty()) save(draft)
+        if ((if (serverMode) draft.apiErrors(editing = run != null) else draft.errors()).isEmpty()) save(draft)
     }) {
         FormSection("기본 기록") {
         PickerField("시작 날짜 · 시간 *", LocalDateTime.parse(draft.startTime).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), "startTime", errors["startTime"]) {
@@ -79,18 +83,20 @@ fun RunEditor(run: TrackedRun?, shoes: List<TrackedShoe>, busy: Boolean, close: 
                 }, initial.hour, initial.minute, true).show()
             }
         }
-        FormField("러닝 시간 (분) *", draft.duration, { draft = draft.copy(duration = it) }, "예: 32", "duration", errors["duration"], KeyboardType.Decimal)
+        FormField(if (serverMode) "러닝 시간 (정수 분) *" else "러닝 시간 (분) *", draft.duration, { draft = draft.copy(duration = it) }, "예: 32", "duration", errors["duration"], if (serverMode) KeyboardType.Number else KeyboardType.Decimal)
         FormField("거리 (km) *", draft.distance, { draft = draft.copy(distance = it) }, "예: 5.2", "runDistance", errors["distance"], KeyboardType.Decimal)
         }
         FormSection("러닝 상세") {
-        FormField("평균 페이스 (분/km, 선택)", draft.pace, { draft = draft.copy(pace = it) }, "예: 6:09", "pace", errors["pace"], KeyboardType.Ascii)
-        FormField("평균 심박수 (bpm, 선택)", draft.heartRate, { draft = draft.copy(heartRate = it) }, "예: 145", "heartRate", errors["heartRate"], KeyboardType.Number)
-        FormField("칼로리 (kcal, 선택)", draft.calories, { draft = draft.copy(calories = it) }, "예: 320", "calories", errors["calories"], KeyboardType.Decimal)
+        if (!serverMode) FormField("평균 페이스 (분/km, 선택)", draft.pace, { draft = draft.copy(pace = it) }, "예: 6:09", "pace", errors["pace"], KeyboardType.Ascii)
+        FormField("평균 심박수 (bpm, 선택)", draft.heartRate, { draft = draft.copy(heartRate = it) }, "예: 145", "heartRate", errors["heartRate"], KeyboardType.Number,
+            enabled = !serverMode || run == null, helper = if (serverMode && run != null) "현재는 등록할 때만 입력할 수 있어요." else null)
+        if (!serverMode) FormField("칼로리 (kcal, 선택)", draft.calories, { draft = draft.copy(calories = it) }, "예: 320", "calories", errors["calories"], KeyboardType.Decimal)
         ChoiceField("신발 선택 (선택)", shoes.find { it.id == draft.shoeId }?.displayName.orEmpty(), shoes.map { it.displayName }, "runShoe",
             optionKeys = shoes.map { it.id }) { draft = draft.copy(shoeId = it) }
-        FormField("평균 속도 (km/h, 선택)", draft.speed, { draft = draft.copy(speed = it) }, "예: 9.75", "speed", errors["speed"], KeyboardType.Decimal)
+        if (!serverMode) FormField("평균 속도 (km/h, 선택)", draft.speed, { draft = draft.copy(speed = it) }, "예: 9.75", "speed", errors["speed"], KeyboardType.Decimal)
         ChoiceField("러닝 후 평가 (선택)", draft.rating, RunDraft.ratings, "rating") { draft = draft.copy(rating = it) }
-        FormField("기온 (°C, 선택)", draft.temperature, { draft = draft.copy(temperature = it) }, "예: 22", "temperature", errors["temperature"], KeyboardType.Ascii)
+        FormField("기온 (°C, 선택)", draft.temperature, { draft = draft.copy(temperature = it) }, "예: 22", "temperature", errors["temperature"], KeyboardType.Ascii,
+            enabled = !serverMode || run == null, helper = if (serverMode && run != null) "현재는 등록할 때만 입력할 수 있어요." else null)
         }
         FormSection("메모") {
         FormField("메모 (선택)", draft.notes, { draft = draft.copy(notes = it) }, "오늘의 러닝을 기록해보세요", "runNotes", multiline = true)
@@ -116,11 +122,11 @@ private fun EditorFrame(title: String, busy: Boolean, close: () -> Unit, save: (
 
 @Composable
 internal fun FormField(label: String, value: String, change: (String) -> Unit, hint: String, tag: String,
-                       error: String? = null, keyboard: KeyboardType = KeyboardType.Text, multiline: Boolean = false, helper: String? = null) {
+                       error: String? = null, keyboard: KeyboardType = KeyboardType.Text, multiline: Boolean = false, helper: String? = null, enabled: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         FieldLabel(label)
         OutlinedTextField(value, change, modifier = Modifier.fillMaxWidth().testTag(tag),
-            placeholder = { Text(hint) }, singleLine = !multiline, minLines = if (multiline) 3 else 1,
+            enabled = enabled, placeholder = { Text(hint) }, singleLine = !multiline, minLines = if (multiline) 3 else 1,
             shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = RunTrackColors.Field, unfocusedContainerColor = RunTrackColors.Field),
             isError = error != null, keyboardOptions = KeyboardOptions(keyboardType = keyboard),
@@ -149,10 +155,10 @@ private fun ChoiceField(label: String, selected: String, options: List<String>, 
 }
 
 @Composable
-private fun PickerField(label: String, value: String, tag: String, error: String?, pick: () -> Unit) {
+private fun PickerField(label: String, value: String, tag: String, error: String?, enabled: Boolean = true, pick: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         FieldLabel(label)
-        Box(Modifier.fillMaxWidth().clickable(onClick = pick).testTag(tag)) {
+        Box(Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = pick).testTag(tag)) {
             OutlinedTextField(value, {}, enabled = false, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
                 trailingIcon = { Icon(Icons.Outlined.DateRange, contentDescription = "날짜 선택", modifier = Modifier.size(20.dp)) },
                 colors = OutlinedTextFieldDefaults.colors(disabledTextColor = MaterialTheme.colorScheme.onSurface,

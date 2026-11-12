@@ -7,7 +7,6 @@ data class Shoe(
     val model: String,
     val size: String? = null,
     val color: String? = null,
-    val purchasePriceWon: Int? = null,
     val purchaseDate: String? = null,
     val notes: String? = null,
     val cumulativeKm: Float,
@@ -22,9 +21,9 @@ data class ShoeCreateRequest(
     val model: String,
     val size: String? = null,
     val color: String? = null,
-    val purchasePriceWon: Int? = null,
     val purchaseDate: String? = null,
-    val notes: String? = null
+    val notes: String? = null,
+    val condition: String = "good"
 )
 
 data class ShoeUpdateRequest(
@@ -32,7 +31,6 @@ data class ShoeUpdateRequest(
     val model: String? = null,
     val size: String? = null,
     val color: String? = null,
-    val purchasePriceWon: Int? = null,
     val condition: String? = null,
     val notes: String? = null
 )

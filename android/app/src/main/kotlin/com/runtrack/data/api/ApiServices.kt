@@ -13,7 +13,7 @@ interface UserService {
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
     @GET("api/users/me")
-    suspend fun getProfile(): Response<User>
+    suspend fun getProfile(@Header("Authorization") authorization: String? = null): Response<User>
 }
 
 interface ShoeService {
@@ -43,6 +43,15 @@ data class RunningSessionEndRequest(
 )
 
 interface RunningService {
+    @POST("api/running")
+    suspend fun createRecord(@Body request: RunningRecordCreateRequest): Response<RunningRecord>
+
+    @PUT("api/running/{id}")
+    suspend fun updateRecord(@Path("id") id: Int, @Body request: RunningRecordUpdateRequest): Response<RunningRecord>
+
+    @DELETE("api/running/{id}")
+    suspend fun deleteRecord(@Path("id") id: Int): Response<Unit>
+
     @POST("api/running/start")
     suspend fun startRunning(): Response<Map<String, String>>
 

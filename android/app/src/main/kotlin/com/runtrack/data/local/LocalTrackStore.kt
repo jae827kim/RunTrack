@@ -8,11 +8,16 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class LocalTrackStore(context: Context) {
-    private val preferences = context.getSharedPreferences("runtrack_records_v1", Context.MODE_PRIVATE)
+interface TrackSnapshotStore {
+    suspend fun load(): TrackSnapshot
+    suspend fun save(snapshot: TrackSnapshot)
+}
+
+class LocalTrackStore(context: Context, preferencesName: String = "runtrack_records_v1") : TrackSnapshotStore {
+    private val preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     private val gson = Gson()
 
-    suspend fun load(): TrackSnapshot = withContext(Dispatchers.IO) {
+    override suspend fun load(): TrackSnapshot = withContext(Dispatchers.IO) {
         val json = preferences.getString("snapshot", null) ?: return@withContext TrackSnapshot()
         try {
             val data = gson.fromJson(json, TrackSnapshot::class.java) ?: error("Empty snapshot")
@@ -32,7 +37,7 @@ class LocalTrackStore(context: Context) {
         }
     }
 
-    suspend fun save(snapshot: TrackSnapshot) = withContext(Dispatchers.IO) {
+    override suspend fun save(snapshot: TrackSnapshot) = withContext(Dispatchers.IO) {
         if (!preferences.edit().putString("snapshot", gson.toJson(snapshot)).commit()) {
             throw IOException("기록을 저장하지 못했어요. 저장 공간을 확인해 주세요.")
         }

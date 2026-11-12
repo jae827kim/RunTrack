@@ -1,8 +1,18 @@
+import java.net.URI
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.android)
+}
+
+val runtrackApiUrl = providers.gradleProperty("runtrackApiBaseUrl")
+    .orElse("http://10.0.2.2:8000/").get().trim().let { it.trimEnd('/') + "/" }
+val runtrackApiUri = URI(runtrackApiUrl)
+require(runtrackApiUri.scheme in listOf("http", "https") && !runtrackApiUri.host.isNullOrBlank() &&
+    runtrackApiUri.userInfo == null && runtrackApiUri.query == null && runtrackApiUri.fragment == null) {
+    "runtrackApiBaseUrl must be an http(s) URL without credentials, query or fragment."
 }
 
 android {
@@ -24,7 +34,7 @@ android {
         // 빌드 설정에서 API 키 추가 (BuildConfig로 접근)
         buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"YOUR_GOOGLE_MAPS_API_KEY\"")
         buildConfigField("String", "GOOGLE_GEMINI_API_KEY", "\"YOUR_GOOGLE_GEMINI_API_KEY\"")
-        buildConfigField("String", "API_BASE_URL", "\"http://localhost:8000/\"")
+        buildConfigField("String", "API_BASE_URL", "\"$runtrackApiUrl\"")
     }
 
     buildTypes {
@@ -126,6 +136,7 @@ dependencies {
 
     // Testing
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

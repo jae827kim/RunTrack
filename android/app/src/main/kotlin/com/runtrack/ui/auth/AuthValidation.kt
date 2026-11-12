@@ -4,7 +4,7 @@ data class SignupInput(
     val username: String,
     val password: String,
     val passwordConfirmation: String,
-    val name: String,
+    val email: String,
     val weight: String
 )
 
@@ -30,17 +30,16 @@ object AuthValidation {
             input.passwordConfirmation.isBlank() -> put("confirmation", "비밀번호 확인을 입력해 주세요.")
             input.passwordConfirmation != input.password -> put("confirmation", "비밀번호가 일치하지 않아요.")
         }
-        val name = input.name.trim()
+        val email = input.email.trim()
         when {
-            name.isEmpty() -> put("name", "이름을 입력해 주세요.")
-            name.length > 50 -> put("name", "이름은 50자 이내로 입력해 주세요.")
-            !name.matches(Regex("[가-힣A-Za-z ]+")) -> put("name", "이름은 한글 또는 영문으로 입력해 주세요.")
+            email.isEmpty() -> put("email", "이메일을 입력해 주세요.")
+            !email.matches(Regex("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) -> put("email", "올바른 이메일 주소를 입력해 주세요.")
         }
         val weight = input.weight.trim()
         when {
             weight.isEmpty() -> put("weight", "체중을 입력해 주세요.")
             !weight.matches(Regex("[0-9]+(?:\\.[0-9]+)?")) ||
-                weight.toDoubleOrNull()?.let { it.isFinite() && it > 0 } != true ->
+                weight.toFloatOrNull()?.let { it.isFinite() && it > 0 } != true ->
                 put("weight", "체중은 0보다 큰 숫자로 입력해 주세요.")
         }
     }

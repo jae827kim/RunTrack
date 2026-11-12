@@ -27,9 +27,9 @@ class ApiContractTest {
 
     @Test
     fun requestUsesBackendFieldNames() {
-        val json = gson.toJsonTree(ShoeCreateRequest("Brand", "Model", purchasePriceWon = 100000)).asJsonObject
-        assertEquals(100000, json.get("purchase_price_won").asInt)
-        assertFalse(json.has("purchasePriceWon"))
+        val json = gson.toJsonTree(ShoeCreateRequest("Brand", "Model", purchaseDate = "2026-11-10T00:00:00")).asJsonObject
+        assertEquals("2026-11-10T00:00:00", json.get("purchase_date").asString)
+        assertFalse(json.has("purchase_price_won"))
     }
 
     @Test

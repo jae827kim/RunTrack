@@ -85,15 +85,6 @@ internal fun Badge(text: String, warning: Boolean = false) {
 }
 
 @Composable
-internal fun InformationNote(text: String, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth().background(RunTrackColors.SoftAccent, RoundedCornerShape(12.dp)).padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-        Icon(Icons.Outlined.Info, null, Modifier.size(16.dp), tint = RunTrackColors.Accent)
-        Text(text, style = MaterialTheme.typography.bodySmall, color = RunTrackColors.Accent)
-    }
-}
-
-@Composable
 internal fun EmptyStateCard(title: String, detail: String, actionLabel: String, icon: ImageVector = Icons.Outlined.DirectionsRun, action: () -> Unit) {
     RunTrackCard {
         Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally,

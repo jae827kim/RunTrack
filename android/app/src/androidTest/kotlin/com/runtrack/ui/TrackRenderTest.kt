@@ -47,7 +47,7 @@ class TrackRenderTest {
     }
 
     @Test fun shoeFormRendersOptionalFieldsAndWidgets() {
-        rule.setContent { RunTrackTheme { Surface { ShoeEditor(null, false, {}, {}) } } }
+        rule.setContent { RunTrackTheme { Surface { ShoeEditor(null, false, {}, {}, serverMode = true) } } }
         rule.onNodeWithTag("size").assertExists()
         rule.onNodeWithTag("purchaseDate").assertExists()
         capture("shoe-form-top")
@@ -55,17 +55,26 @@ class TrackRenderTest {
         onView(withClassName(endsWith("DatePicker"))).check(matches(isDisplayed()))
         Espresso.pressBack()
         rule.onNodeWithTag("shoeNotes").performScrollTo()
-        rule.onNodeWithText("러닝 횟수 (선택)").assertIsDisplayed()
+        rule.onNodeWithTag("shoeCount").assertDoesNotExist()
         capture("shoe-form-bottom")
     }
 
     @Test fun runFormRendersRequiredAndOptionalFields() {
-        rule.setContent { RunTrackTheme { Surface { RunEditor(null, emptyList(), false, {}, {}) } } }
+        rule.setContent { RunTrackTheme { Surface { RunEditor(null, emptyList(), false, {}, {}, serverMode = true) } } }
         rule.onNodeWithTag("startTime").assertExists()
+        rule.onNodeWithTag("calories").assertDoesNotExist()
         capture("run-form-top")
         rule.onNodeWithTag("rating").performScrollTo()
         rule.onNodeWithTag("rating").assertIsDisplayed()
         capture("run-form-bottom")
+    }
+
+    @Test fun serverShoeWithoutPurchaseDateDoesNotInventOne() {
+        val shoe = TrackedShoe("1", "Nike", "Pegasus", "")
+        rule.setContent { RunTrackTheme { Surface { ShoeEditor(shoe, false, {}, {}, serverMode = true) } } }
+        rule.onNodeWithTag("purchaseDate").performScrollTo().assertIsNotEnabled()
+        rule.onNodeWithText("미입력").assertIsDisplayed()
+        capture("shoe-edit-unknown-date")
     }
 
     @Test fun runningListDisplaysFullRecordAndActiveNavigation() {
@@ -100,7 +109,7 @@ class TrackRenderTest {
             Box(Modifier.weight(1f)) { AiScreen { returned = true } }
             TrackNavigation("ai") {}
         } } } }
-        rule.onNodeWithText("디자인 예시 · 실제 AI 추천이 아닙니다").assertIsDisplayed()
+        rule.onNodeWithText("AI 추천 예시").assertIsDisplayed()
         capture("ai-example")
         rule.onNodeWithText("홈으로 돌아가기").performScrollTo().performClick()
         rule.runOnIdle { check(returned) }

@@ -14,6 +14,9 @@ import com.runtrack.ui.theme.RunTrackColors
 import com.runtrack.ui.theme.RunTrackTheme
 import com.runtrack.ui.auth.LoginScreen
 import com.runtrack.ui.auth.SignupScreen
+import com.runtrack.data.weather.CurrentWeather
+import com.runtrack.data.weather.weatherCities
+import java.time.Instant
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -30,29 +33,38 @@ private fun HomePreview() {
     RunTrackTheme {
         Surface {
             Column(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f)) { HomeScreen(example, {}, {}, {}) }
+                Box(Modifier.weight(1f)) { HomeScreen(example, {}, {}, {}, weatherContent = { WeatherCard(previewWeather(), {}, {}) }) }
                 TrackNavigation("home") {}
             }
         }
     }
 }
 
+private fun previewWeather() = WeatherState(data = CurrentWeather(weatherCities.first(), Instant.now(),
+    18.0, 17.0, 60, 1.5, 0.0, 2, true, 900, System.currentTimeMillis()))
+
+@Preview(name = "날씨 카드 · 예시", showBackground = true, locale = "ko", widthDp = 393)
+@Composable
+private fun WeatherPreview() {
+    RunTrackTheme { Surface { WeatherCard(previewWeather(), {}, {}) } }
+}
+
 @Preview(name = "신발 추가", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
 @Composable
 private fun ShoeEditorPreview() {
-    RunTrackTheme { Surface { ShoeEditor(null, false, {}, {}) } }
+    RunTrackTheme { Surface { ShoeEditor(null, false, {}, {}, serverMode = true) } }
 }
 
 @Preview(name = "러닝 기록 추가", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
 @Composable
 private fun RunEditorPreview() {
-    RunTrackTheme { Surface { RunEditor(null, emptyList(), false, {}, {}) } }
+    RunTrackTheme { Surface { RunEditor(null, emptyList(), false, {}, {}, serverMode = true) } }
 }
 
 @Preview(name = "로그인", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
 @Composable
 private fun LoginPreview() {
-    RunTrackTheme { Surface { LoginScreen(onContinue = {}, onSignup = {}) } }
+    RunTrackTheme { Surface { LoginScreen(onContinue = { _, _ -> }, onSignup = {}) } }
 }
 
 @Preview(name = "회원가입", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)

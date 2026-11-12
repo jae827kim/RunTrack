@@ -30,13 +30,12 @@ data class RunningRecordCreateRequest(
     val distanceKm: Float,
     val durationMinutes: Int,
     val startTime: String,
-    val endTime: String,
+    val endTime: String? = null,
     val shoeId: Int? = null,
     val avgPaceMinPerKm: Float? = null,
     val maxSpeedKmh: Float? = null,
     val avgSpeedKmh: Float? = null,
     val avgHeartRate: Int? = null,
-    val caloriesBurned: Float? = null,
     val elevationGainM: Float? = null,
     val temperatureC: Float? = null,
     val feeling: String? = null,
@@ -49,8 +48,19 @@ data class RunningStatistics(
     val avgDistanceKm: Float,
     val avgPaceMinPerKm: Float,
     val totalDurationMinutes: Int,
-    val avgDurationMinutes: Int,
+    val avgDurationMinutes: Float,
     val totalCalories: Float,
     val avgHeartRate: Float? = null,
     val avgElevationGainM: Float? = null
+)
+
+/** Null optional values are serialized so that PUT can explicitly detach a shoe or clear notes. */
+data class RunningRecordUpdateRequest(
+    val distanceKm: Double,
+    val durationMinutes: Int,
+    val startTime: String,
+    val endTime: String,
+    val shoeId: Int?,
+    val feeling: String?,
+    val notes: String?
 )
