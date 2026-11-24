@@ -81,4 +81,19 @@ class TrackFlowTest {
         rule.onAllNodesWithText("삭제").onLast().performClick()
         rule.waitUntil(30000) { data().shoes.isEmpty() }
     }
+
+    @Test fun startsAndFinishesARunningSessionThroughTheHomeScreen() {
+        rule.onNodeWithTag("startRunning").performScrollTo().performClick()
+        rule.waitUntil(30000) { rule.onAllNodesWithTag("finishRunning").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithTag("finishRunning").performScrollTo().performClick()
+        rule.onNodeWithTag("finishDistance").performTextInput("5.2")
+        rule.onNodeWithTag("finishNotes").performTextInput("세션 연동 테스트")
+        rule.onNodeWithTag("finishSessionConfirm").performClick()
+        rule.waitUntil(30000) { data().runs.size == 1 }
+
+        val saved = data().runs.single()
+        assertEquals(5.2, saved.distanceKm, 0.00001)
+        assertEquals("세션 연동 테스트", saved.notes)
+        rule.onNodeWithTag("startRunning").assertExists()
+    }
 }

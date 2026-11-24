@@ -40,6 +40,7 @@ data class RunningSessionEndRequest(
     @SerializedName("distance_km") val distanceKm: Float,
     @SerializedName("duration_minutes") val durationMinutes: Int,
     @SerializedName("end_time") val endTime: String? = null,
+    val notes: String? = null,
 )
 
 interface RunningService {
@@ -53,7 +54,7 @@ interface RunningService {
     suspend fun deleteRecord(@Path("id") id: Int): Response<Unit>
 
     @POST("api/running/start")
-    suspend fun startRunning(): Response<Map<String, String>>
+    suspend fun startRunning(@Body request: RunningSessionStartRequest): Response<RunningSessionResponse>
 
     @POST("api/running/{id}/end")
     suspend fun endRunning(

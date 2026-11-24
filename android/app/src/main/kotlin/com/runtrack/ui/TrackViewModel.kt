@@ -16,7 +16,8 @@ import kotlinx.coroutines.sync.withLock
 
 data class TrackState(
     val data: TrackSnapshot = TrackSnapshot(), val loading: Boolean = true,
-    val saving: Boolean = false, val error: String? = null, val loadFailed: Boolean = false
+    val saving: Boolean = false, val error: String? = null, val loadFailed: Boolean = false,
+    val activeSession: ActiveRunSession? = null
 )
 
 class TrackViewModel(private val repository: TrackRepository = RemoteTrackRepository()) : ViewModel() {
@@ -36,6 +37,32 @@ class TrackViewModel(private val repository: TrackRepository = RemoteTrackReposi
     }
 
     fun clearError() { mutable.value = mutable.value.copy(error = null) }
+    fun startSession(shoeId: String?) {
+        val current = mutable.value
+        if (current.loading || current.loadFailed || current.saving || current.activeSession != null) return
+        mutable.value = current.copy(saving = true, error = null)
+        viewModelScope.launch {
+            mutation.withLock {
+                try {
+                    val session = repository.startSession(shoeId)
+                    mutable.value = mutable.value.copy(saving = false, activeSession = session)
+                } catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) {
+                    mutable.value = mutable.value.copy(saving = false, error = error.userMessage())
+                }
+            }
+        }
+    }
+
+    fun finishSession(distanceKm: Double, durationMinutes: Int, notes: String?, done: () -> Unit) {
+        val session = mutable.value.activeSession ?: return
+        if (!distanceKm.isFinite() || distanceKm <= 0 || durationMinutes <= 0) return
+        change(done) {
+            repository.finishSession(session, distanceKm, durationMinutes, notes)
+            mutable.value = mutable.value.copy(activeSession = null)
+        }
+    }
+
     fun saveShoe(draft: ShoeDraft, id: String?, done: () -> Unit) = change(done) { repository.saveShoe(draft, id) }
     fun saveRun(draft: RunDraft, id: String?, done: () -> Unit) = change(done) { repository.saveRun(draft, id) }
     fun deleteShoe(id: String) = change { repository.deleteShoe(id) }

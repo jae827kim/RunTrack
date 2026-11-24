@@ -7,6 +7,8 @@ import java.time.*
 
 interface TrackRepository {
     suspend fun load(): TrackSnapshot
+    suspend fun startSession(shoeId: String?): ActiveRunSession
+    suspend fun finishSession(session: ActiveRunSession, distanceKm: Double, durationMinutes: Int, notes: String?)
     suspend fun saveShoe(draft: ShoeDraft, id: String?)
     suspend fun deleteShoe(id: String)
     suspend fun saveRun(draft: RunDraft, id: String?)
@@ -18,6 +20,24 @@ class RemoteTrackRepository(
     private val runs: RunningService = RetrofitClient.runningService,
     private val zone: ZoneId = ZoneId.systemDefault()
 ) : TrackRepository {
+    override suspend fun startSession(shoeId: String?): ActiveRunSession {
+        val parsedShoeId = shoeId?.toIntOrNull()
+        require(shoeId == null || parsedShoeId != null) { "선택한 신발을 확인할 수 없습니다." }
+        val session = runs.startRunning(RunningSessionStartRequest(parsedShoeId)).requiredBody()
+        return ActiveRunSession(session.sessionId, localDateTime(session.startTime, zone).toString(), session.shoeId?.toString())
+    }
+
+    override suspend fun finishSession(
+        session: ActiveRunSession,
+        distanceKm: Double,
+        durationMinutes: Int,
+        notes: String?
+    ) {
+        runs.endRunning(session.sessionId, RunningSessionEndRequest(
+            distanceKm = distanceKm.toFloat(), durationMinutes = durationMinutes, notes = notes
+        )).requiredBody()
+    }
+
     override suspend fun load(): TrackSnapshot {
         val serverShoes = shoes.getShoes().requiredBody()
         val records = mutableListOf<RunningRecord>()

@@ -24,6 +24,15 @@ data class RunningRecord(
     val updatedAt: String
 )
 
+data class RunningSessionResponse(
+    val sessionId: String,
+    val startTime: String,
+    val shoeId: Int?,
+    val status: String
+)
+
+data class RunningSessionStartRequest(val shoeId: Int? = null)
+
 data class RunningRecordCreateRequest(
     val title: String? = null,
     val description: String? = null,

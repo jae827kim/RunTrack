@@ -44,6 +44,8 @@ data class TrackedRun(
     val effectivePace: Double get() = paceMinutesPerKm ?: durationMinutes / distanceKm
 }
 
+data class ActiveRunSession(val sessionId: String, val startTime: String, val shoeId: String? = null)
+
 data class TrackSnapshot(
     val version: Int = 1,
     val shoes: List<TrackedShoe> = emptyList(),

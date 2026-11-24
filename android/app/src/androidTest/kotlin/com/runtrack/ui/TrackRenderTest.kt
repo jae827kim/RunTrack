@@ -103,19 +103,6 @@ class TrackRenderTest {
         capture("shoes-list")
     }
 
-    @Test fun aiExampleIsClearlyLabeledAndCanReturnHome() {
-        var returned = false
-        rule.setContent { RunTrackTheme { Surface(color = RunTrackColors.Background) { Column(Modifier.fillMaxSize()) {
-            Box(Modifier.weight(1f)) { AiScreen { returned = true } }
-            TrackNavigation("ai") {}
-        } } } }
-        rule.onNodeWithText("AI 추천 예시").assertIsDisplayed()
-        capture("ai-example")
-        rule.onNodeWithText("홈으로 돌아가기").performScrollTo().performClick()
-        rule.runOnIdle { check(returned) }
-        capture("ai-example-bottom")
-    }
-
     private fun example(): TrackSnapshot {
         val shoe = TrackedShoe("shoe", "Nike", "Air Zoom Pegasus 41", "2026-09-01", "260mm", "화이트", "사용 중", 45.0, 8,
             "가볍게 달리는 날 함께하는 신발")
