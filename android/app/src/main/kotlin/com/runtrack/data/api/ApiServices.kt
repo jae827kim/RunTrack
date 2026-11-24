@@ -6,15 +6,28 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface UserService {
-    // TODO: 사용자 로그인/회원가입 API 정의
+    @POST("api/users/register")
+    suspend fun register(@Body request: RegisterRequest): Response<User>
+
+    @POST("api/users/login")
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    @GET("api/users/me")
+    suspend fun getProfile(@Header("Authorization") authorization: String? = null): Response<User>
 }
 
 interface ShoeService {
+    @POST("api/shoes")
+    suspend fun createShoe(@Body request: ShoeCreateRequest): Response<Shoe>
+
+    @GET("api/shoes")
+    suspend fun getShoes(): Response<List<Shoe>>
+
+    @GET("api/shoes/{id}")
+    suspend fun getShoe(@Path("id") id: Int): Response<Shoe>
+
     @PUT("api/shoes/{id}")
-    suspend fun updateShoe(
-        @Path("id") id: Int,
-        @Body request: ShoeUpdateRequest
-    ): Response<Shoe>
+    suspend fun updateShoe(@Path("id") id: Int, @Body request: ShoeUpdateRequest): Response<Shoe>
 
     @DELETE("api/shoes/{id}")
     suspend fun deleteShoe(@Path("id") id: Int): Response<Unit>
@@ -30,6 +43,15 @@ data class RunningSessionEndRequest(
 )
 
 interface RunningService {
+    @POST("api/running")
+    suspend fun createRecord(@Body request: RunningRecordCreateRequest): Response<RunningRecord>
+
+    @PUT("api/running/{id}")
+    suspend fun updateRecord(@Path("id") id: Int, @Body request: RunningRecordUpdateRequest): Response<RunningRecord>
+
+    @DELETE("api/running/{id}")
+    suspend fun deleteRecord(@Path("id") id: Int): Response<Unit>
+
     @POST("api/running/start")
     suspend fun startRunning(): Response<Map<String, String>>
 

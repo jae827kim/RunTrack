@@ -81,3 +81,15 @@ build/
 
 # 로그
 *.log
+
+# Commit the Android Gradle wrapper for reproducible builds.
+!/android/gradlew
+!/android/gradlew.bat
+!/android/gradle/wrapper/gradle-wrapper.jar
+
+# Isolated local API database, virtualenv and development signing secret.
+.local-api/
+
+# Keep the debug source manifest and local-network configuration (not build outputs).
+!/android/app/src/debug/
+!/android/app/src/debug/**
