@@ -17,7 +17,7 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class AuthFlowTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
-    @Before fun clearSession() { ApiSession.clear() }
+    @Before fun clearSession() { requireLocalTestApi(); ApiSession.clear() }
     @After fun logout() { ApiSession.clear() }
     private fun home() = rule.waitUntil(30000) { rule.onAllNodesWithTag("nav_home").fetchSemanticsNodes().isNotEmpty() }
     private fun login(account: ApiTestAccount) {

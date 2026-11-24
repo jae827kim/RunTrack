@@ -9,9 +9,15 @@ import java.util.UUID
 
 data class ApiTestAccount(val username: String, val password: String, val email: String)
 
+fun requireLocalTestApi() {
+    check(BuildConfig.DEBUG && Regex("http://(10\\.0\\.2\\.2|127\\.0\\.0\\.1|localhost):[0-9]+/").matches(BuildConfig.API_BASE_URL)) {
+        "API UI tests require a local debug server."
+    }
+}
+
 /** Only creates disposable accounts on an explicitly local development server. */
 fun newApiTestAccount(): ApiTestAccount = runBlocking {
-    check(BuildConfig.DEBUG && Regex("http://(10\\.0\\.2\\.2|127\\.0\\.0\\.1|localhost):[0-9]+/").matches(BuildConfig.API_BASE_URL))
+    requireLocalTestApi()
     val username = "ui_${UUID.randomUUID().toString().replace("-", "")}"
     val account = ApiTestAccount(username, "ui-test-password", "$username@example.test")
     RetrofitClient.userService.register(RegisterRequest(username, account.email, account.password, weightKg = 70.5f)).requiredBody()

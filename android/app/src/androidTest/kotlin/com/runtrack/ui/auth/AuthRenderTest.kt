@@ -38,22 +38,22 @@ class AuthRenderTest {
         capture("signup-bottom")
     }
 
-    @Test fun usernameCheckUsesRequestedCopyAndClearsWhenInputChanges() {
+    @Test fun usernameCheckExplainsItsLimitsAndClearsWhenInputChanges() {
         rule.setContent { RunTrackTheme { Surface { SignupScreen(onBack = {}, onComplete = {}) } } }
-        rule.onNodeWithText("중복확인").assertIsDisplayed()
-        rule.onNodeWithText("입력 확인").assertDoesNotExist()
+        rule.onNodeWithText("입력 확인").assertIsDisplayed()
         rule.onNodeWithTag("signupUsername").performTextInput("test_runner")
         Espresso.closeSoftKeyboard()
         rule.onNodeWithTag("checkUsername").performClick()
-        rule.onNodeWithText("사용 가능한 아이디입니다").assertIsDisplayed()
-        capture("signup-available")
+        rule.onNodeWithText("아이디 형식이 올바릅니다. 중복 여부는 가입 시 확인합니다.").assertIsDisplayed()
+        rule.onNodeWithText("사용 가능한 아이디입니다").assertDoesNotExist()
+        capture("signup-format-valid")
         rule.onNodeWithTag("signupUsername").performTextReplacement("another_runner")
-        rule.onNodeWithTag("usernameAvailable").assertDoesNotExist()
+        rule.onNodeWithTag("usernameFormatValid").assertDoesNotExist()
         rule.onNodeWithTag("signupUsername").performTextReplacement("admin")
         Espresso.closeSoftKeyboard()
         rule.onNodeWithTag("checkUsername").performClick()
         rule.onNodeWithText("이미 사용 중인 아이디입니다.").assertIsDisplayed()
-        rule.onNodeWithTag("usernameAvailable").assertDoesNotExist()
+        rule.onNodeWithTag("usernameFormatValid").assertDoesNotExist()
     }
 
     private fun capture(name: String) {
