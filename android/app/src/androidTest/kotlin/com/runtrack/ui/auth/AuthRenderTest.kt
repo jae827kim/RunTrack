@@ -38,22 +38,14 @@ class AuthRenderTest {
         capture("signup-bottom")
     }
 
-    @Test fun usernameCheckUsesRequestedCopyAndClearsWhenInputChanges() {
+    @Test fun signupDoesNotClaimUsernameIsAvailableBeforeServerRegistration() {
         rule.setContent { RunTrackTheme { Surface { SignupScreen(onBack = {}, onComplete = {}) } } }
-        rule.onNodeWithText("중복확인").assertIsDisplayed()
-        rule.onNodeWithText("입력 확인").assertDoesNotExist()
+        rule.onNodeWithTag("checkUsername").assertDoesNotExist()
         rule.onNodeWithTag("signupUsername").performTextInput("test_runner")
         Espresso.closeSoftKeyboard()
-        rule.onNodeWithTag("checkUsername").performClick()
-        rule.onNodeWithText("사용 가능한 아이디입니다").assertIsDisplayed()
-        capture("signup-available")
-        rule.onNodeWithTag("signupUsername").performTextReplacement("another_runner")
         rule.onNodeWithTag("usernameAvailable").assertDoesNotExist()
-        rule.onNodeWithTag("signupUsername").performTextReplacement("admin")
-        Espresso.closeSoftKeyboard()
-        rule.onNodeWithTag("checkUsername").performClick()
-        rule.onNodeWithText("이미 사용 중인 아이디입니다.").assertIsDisplayed()
-        rule.onNodeWithTag("usernameAvailable").assertDoesNotExist()
+        rule.onNodeWithTag("signupSubmit").assertIsDisplayed()
+        capture("signup-server-validated")
     }
 
     private fun capture(name: String) {

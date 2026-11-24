@@ -33,7 +33,6 @@ android {
 
         // 빌드 설정에서 API 키 추가 (BuildConfig로 접근)
         buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"YOUR_GOOGLE_MAPS_API_KEY\"")
-        buildConfigField("String", "GOOGLE_GEMINI_API_KEY", "\"YOUR_GOOGLE_GEMINI_API_KEY\"")
         buildConfigField("String", "API_BASE_URL", "\"$runtrackApiUrl\"")
     }
 
@@ -116,9 +115,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.maps.android:maps-compose:4.0.0")
     implementation("com.google.maps.android:maps-ktx:5.0.0")
-
-    // Google Gemini API
-    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
 
     // DataStore (로컬 저장소)
     implementation("androidx.datastore:datastore-preferences:1.0.0")

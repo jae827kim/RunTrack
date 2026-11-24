@@ -148,8 +148,6 @@ fun SignupScreen(busy: Boolean = false, serverError: String? = null, onBack: () 
     var email by rememberSaveable { mutableStateOf("") }
     var weight by rememberSaveable { mutableStateOf("") }
     var submitted by remember { mutableStateOf(false) }
-    var checkedId by remember { mutableStateOf<String?>(null) }
-    var idCheckRequested by remember { mutableStateOf(false) }
     fun validate(input: SignupInput) = AuthValidation.signup(input).toMutableMap().apply {
         if (OfflineAdminAccount.isReserved(input.username)) put("username", "이미 사용 중인 아이디입니다.")
     }
@@ -174,25 +172,13 @@ fun SignupScreen(busy: Boolean = false, serverError: String? = null, onBack: () 
             RunTrackCard {
                 if (serverError != null) Text(serverError, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("authError"), style = MaterialTheme.typography.bodyMedium)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FieldLabel("아이디")
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                        AuthInput(username, { username = it; checkedId = null; idCheckRequested = false }, "", "signupUsername",
-                            errors["username"] ?: if (idCheckRequested) AuthValidation.usernameError(username) else null,
-                            requests.getValue("username"), modifier = Modifier.weight(1f), description = "아이디", enabled = !busy)
-                        OutlinedButton(onClick = {
-                            idCheckRequested = true
-                            // UI-only confirmation: the backend's registration still enforces uniqueness.
-                            if (AuthValidation.usernameError(username) == null && !OfflineAdminAccount.isReserved(username)) checkedId = username.trim()
-                            else requests.getValue("username").requestFocus()
-                        }, enabled = !busy, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 8.dp),
-                            modifier = Modifier.width(82.dp).height(56.dp).testTag("checkUsername")) {
-                            Text("중복확인", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                    if (idCheckRequested && OfflineAdminAccount.isReserved(username) && "username" !in errors) Text("이미 사용 중인 아이디입니다.",
-                        color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    else if (checkedId == username.trim() && serverError == null) Text("사용 가능한 아이디입니다",
-                        modifier = Modifier.testTag("usernameAvailable"), style = MaterialTheme.typography.bodySmall, color = RunTrackColors.Accent)
+                    SignupField("아이디", username, { username = it }, "아이디를 입력해 주세요.",
+                        "signupUsername", errors["username"], requests.getValue("username"), enabled = !busy)
+                    if (OfflineAdminAccount.isReserved(username) && "username" !in errors) Text(
+                        "이미 사용 중인 아이디입니다.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
                 SignupField("비밀번호", password, { password = it }, "8자 이상 입력", "signupPassword", errors["password"], requests.getValue("password"), password = true, enabled = !busy)
                 SignupField("비밀번호 확인", confirmation, { confirmation = it }, "", "signupConfirmation", errors["confirmation"], requests.getValue("confirmation"), password = true, enabled = !busy)

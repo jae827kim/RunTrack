@@ -101,11 +101,3 @@ private fun ShoesPreview() {
     } } }
 }
 
-@Preview(name = "AI 추천", showBackground = true, locale = "ko", widthDp = 393, heightDp = 780)
-@Composable
-private fun AiPreview() {
-    RunTrackTheme { Surface(color = RunTrackColors.Background) { Column(Modifier.fillMaxSize()) {
-        Box(Modifier.weight(1f)) { AiScreen {} }
-        TrackNavigation("ai") {}
-    } } }
-}

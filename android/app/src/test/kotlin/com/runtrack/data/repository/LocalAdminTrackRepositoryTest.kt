@@ -42,4 +42,22 @@ class LocalAdminTrackRepositoryTest {
         assertNull(data.runs.single().shoeId)
         assertEquals(shoe.displayName, data.runs.single().shoeName)
     }
+
+    @Test fun offlineRunningSessionCreatesARecordWhenFinished() = runBlocking {
+        val repository = LocalAdminTrackRepository(MemoryStore())
+        repository.saveShoe(ShoeDraft(brand = "Local", model = "Shoe"), null)
+        val shoe = repository.load().shoes.single()
+        val session = repository.startSession(shoe.id)
+
+        repository.finishSession(session, 5.2, 32, "저녁 러닝")
+
+        val data = repository.load()
+        val saved = data.runs.single()
+        assertEquals(5.2, saved.distanceKm, 0.00001)
+        assertEquals(32.0, saved.durationMinutes, 0.0)
+        assertEquals("저녁 러닝", saved.notes)
+        assertEquals(shoe.id, saved.shoeId)
+        assertEquals(5.2, data.shoeDistance(data.shoes.single()), 0.00001)
+        assertEquals(1, data.shoeRunCount(data.shoes.single()))
+    }
 }

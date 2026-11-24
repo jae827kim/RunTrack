@@ -82,6 +82,30 @@ class RemoteApiTest {
         assertEquals("/api/running?skip=100&limit=100", request().path)
     }
 
+    @Test fun runningSessionUsesStartAndEndEndpoints() = runBlocking {
+        login()
+        reply("""{"session_id":"session-123","start_time":"2026-11-10T00:00:00","shoe_id":7,"status":"active"}""")
+        val session = repository.startSession("7")
+        val start = request()
+        assertEquals("POST", start.method)
+        assertEquals("/api/running/start", start.path)
+        assertEquals(7, JsonParser.parseString(start.body.readUtf8()).asJsonObject.get("shoe_id").asInt)
+        assertEquals("session-123", session.sessionId)
+        assertEquals("2026-11-10T09:00", session.startTime)
+        assertEquals("7", session.shoeId)
+
+        reply("""{"id":44,"user_id":1,"distance_km":5.2,"duration_minutes":32,"start_time":"2026-11-10T00:00:00","end_time":"2026-11-10T00:32:00","shoe_id":7,"created_at":"2026-11-10T00:32:00","updated_at":"2026-11-10T00:32:00"}""")
+        repository.finishSession(session, 5.2, 32, "저녁 러닝")
+        val end = request()
+        assertEquals("POST", end.method)
+        assertEquals("/api/running/session-123/end", end.path)
+        val body = JsonParser.parseString(end.body.readUtf8()).asJsonObject
+        assertEquals(5.2, body.get("distance_km").asDouble, 0.00001)
+        assertEquals(32, body.get("duration_minutes").asInt)
+        assertTrue(body.get("end_time").isJsonNull)
+        assertEquals("저녁 러닝", body.get("notes").asString)
+    }
+
     @Test fun editingCanDetachAShoeAndClearNotesWithoutSendingUnsupportedFields() = runBlocking {
         login(); reply("{}")
         repository.saveRun(RunDraft(startTime = "2026-11-10T07:00", duration = "32", distance = "5.2"), "3")

@@ -35,7 +35,10 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.input.KeyboardType
+import kotlinx.coroutines.delay
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.temporal.TemporalAdjusters
 import com.runtrack.R
 import com.runtrack.data.local.*
@@ -51,6 +54,7 @@ fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null, i
     var editId by rememberSaveable { mutableStateOf<String?>(null) }
     var removeShoe by rememberSaveable { mutableStateOf<String?>(null) }
     var removeRun by rememberSaveable { mutableStateOf<String?>(null) }
+    var finishSessionId by rememberSaveable { mutableStateOf<String?>(null) }
     var settings by remember { mutableStateOf(false) }
     fun navigate(destination: String, id: String? = null) { editId = id; screen = destination }
     BackHandler(enabled = screen != "home" || state.saving) {
@@ -84,8 +88,18 @@ fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null, i
                             when (screen) {
                                 "runs" -> RunningScreen(state.data, { navigate("runEditor") }, { navigate("runEditor", it) }, { removeRun = it })
                                 "shoes" -> ShoesScreen(state.data, { navigate("shoeEditor") }, { navigate("shoeEditor", it) }, { removeShoe = it })
-                                "ai" -> AiScreen { navigate("home") }
-                                else -> HomeScreen(state.data, { navigate("ai") }, { settings = true }, { navigate("runEditor") }, weatherContent = { HomeWeather() })
+                                else -> HomeScreen(
+                                    data = state.data,
+                                    onStartSession = vm::startSession,
+                                    settings = { settings = true },
+                                    add = { navigate("runEditor") },
+                                    shoes = state.data.shoes,
+                                    activeSession = state.activeSession,
+                                    onFinishSession = { session ->
+                                        finishSessionId = session.sessionId
+                                    },
+                                    weatherContent = { HomeWeather() }
+                                )
                             }
                         }
                         TrackNavigation(screen) { navigate(it) }
@@ -97,6 +111,16 @@ fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null, i
     state.error?.takeUnless { state.loadFailed }?.let { message ->
         AlertDialog(onDismissRequest = vm::clearError, title = { Text("저장하지 못했어요") }, text = { Text(message) },
             confirmButton = { TextButton(onClick = vm::clearError) { Text("확인") } })
+    }
+    state.activeSession?.takeIf { it.sessionId == finishSessionId }?.let {
+        FinishRunningDialog(
+            startTime = it.startTime,
+            busy = state.saving,
+            onDismiss = { finishSessionId = null },
+            onConfirm = { distanceKm, notes ->
+                vm.finishSession(distanceKm, elapsedMinutes(it.startTime), notes) { finishSessionId = null }
+            }
+        )
     }
     removeShoe?.let { id ->
         DeleteDialog("신발을 삭제할까요?", if (isOfflineAdmin) "러닝 기록과 당시 신발 이름은 유지됩니다." else "러닝 기록은 유지되지만 이 신발의 연결 정보는 해제됩니다.", { removeShoe = null }) {
@@ -117,8 +141,16 @@ fun TrackApp(vm: TrackViewModel = viewModel(), onLogout: (() -> Unit)? = null, i
 }
 
 @Composable
-fun HomeScreen(data: TrackSnapshot, ai: () -> Unit, settings: () -> Unit, add: () -> Unit,
-               weatherContent: (@Composable () -> Unit)? = null) {
+fun HomeScreen(
+    data: TrackSnapshot,
+    onStartSession: (String?) -> Unit,
+    settings: () -> Unit,
+    add: () -> Unit,
+    shoes: List<TrackedShoe> = emptyList(),
+    activeSession: ActiveRunSession? = null,
+    onFinishSession: (ActiveRunSession) -> Unit = {},
+    weatherContent: (@Composable () -> Unit)? = null
+) {
     val summary = data.weekSummary(LocalDate.now())
     val monday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
     Column(Modifier.fillMaxSize().background(RunTrackColors.Background)) {
@@ -160,14 +192,10 @@ fun HomeScreen(data: TrackSnapshot, ai: () -> Unit, settings: () -> Unit, add: (
                 WeeklyMetric("평균 페이스", "${paceText(summary.pace)} /km", Icons.Outlined.Timer,
                     Modifier.weight(1f).testTag("weekPace"))
             }
+            RunningSessionControl(activeSession, shoes, onStartSession, onFinishSession)
             weatherContent?.invoke()
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("최근 러닝 기록 3개", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                TextButton(onClick = ai, modifier = Modifier.testTag("openAi"), contentPadding = PaddingValues(horizontal = 6.dp)) {
-                    Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(15.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("AI 추천", style = MaterialTheme.typography.labelMedium)
-                }
+                Text("최근 러닝 기록 3개", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
             if (data.runs.isEmpty()) EmptyStateCard("아직 러닝 기록이 없어요.", "첫 러닝을 기록해 보세요.", "러닝 기록 추가", action = add)
             else data.recentRuns().forEach { run ->
@@ -187,6 +215,135 @@ fun HomeScreen(data: TrackSnapshot, ai: () -> Unit, settings: () -> Unit, add: (
         }
     }
 }
+
+@Composable
+private fun RunningSessionControl(
+    session: ActiveRunSession?,
+    shoes: List<TrackedShoe>,
+    onStart: (String?) -> Unit,
+    onFinish: (ActiveRunSession) -> Unit
+) {
+    if (session == null) {
+        var selectedShoeId by rememberSaveable { mutableStateOf("") }
+        var expanded by remember { mutableStateOf(false) }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (shoes.isNotEmpty()) {
+                Box {
+                    OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth().testTag("runningShoe")) {
+                        Text(shoes.firstOrNull { it.id == selectedShoeId }?.displayName ?: "신발 선택 (선택)")
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        DropdownMenuItem(text = { Text("선택 안 함") }, onClick = { selectedShoeId = ""; expanded = false })
+                        shoes.forEach { shoe ->
+                            DropdownMenuItem(text = { Text(shoe.displayName) }, onClick = {
+                                selectedShoeId = shoe.id
+                                expanded = false
+                            })
+                        }
+                    }
+                }
+            }
+            Button(onClick = { onStart(selectedShoeId.ifBlank { null }) },
+                modifier = Modifier.fillMaxWidth().testTag("startRunning")) {
+                Icon(Icons.Outlined.DirectionsRun, null)
+                Spacer(Modifier.width(8.dp))
+                Text("러닝 시작")
+            }
+        }
+        return
+    }
+
+    var now by remember(session.sessionId) { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(session.sessionId) {
+        while (true) {
+            delay(1_000)
+            now = LocalDateTime.now()
+        }
+    }
+    val elapsedSeconds = Duration.between(LocalDateTime.parse(session.startTime), now).seconds.coerceAtLeast(0)
+    val hours = elapsedSeconds / 3_600
+    val minutes = elapsedSeconds / 60 % 60
+    val seconds = elapsedSeconds % 60
+    Surface(Modifier.fillMaxWidth(), color = RunTrackColors.SoftAccent, shape = RoundedCornerShape(18.dp)) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("러닝 진행 중", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("%02d:%02d:%02d".format(Locale.US, hours, minutes, seconds),
+                    Modifier.testTag("runningElapsed"), style = MaterialTheme.typography.headlineSmall)
+            }
+            Button(onClick = { onFinish(session) }, modifier = Modifier.testTag("finishRunning")) {
+                Icon(Icons.Outlined.Stop, null)
+                Spacer(Modifier.width(6.dp))
+                Text("종료")
+            }
+        }
+    }
+}
+
+@Composable
+private fun FinishRunningDialog(
+    startTime: String,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (Double, String?) -> Unit
+) {
+    var distance by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var distanceError by remember { mutableStateOf(false) }
+    var now by remember(startTime) { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(startTime) {
+        while (true) {
+            delay(1_000)
+            now = LocalDateTime.now()
+        }
+    }
+    val durationMinutes = Duration.between(LocalDateTime.parse(startTime), now).toMinutes()
+        .coerceIn(1, Int.MAX_VALUE.toLong()).toInt()
+    AlertDialog(
+        onDismissRequest = { if (!busy) onDismiss() },
+        title = { Text("러닝 종료") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("러닝 시간: ${durationMinutes}분")
+                OutlinedTextField(
+                    value = distance,
+                    onValueChange = { distance = it; distanceError = false },
+                    modifier = Modifier.fillMaxWidth().testTag("finishDistance"),
+                    label = { Text("거리 (km)") },
+                    isError = distanceError,
+                    supportingText = if (distanceError) {{ Text("0보다 큰 거리를 입력해 주세요.") }} else null,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    modifier = Modifier.fillMaxWidth().testTag("finishNotes"),
+                    label = { Text("메모 (선택)") },
+                    minLines = 2
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !busy,
+                modifier = Modifier.testTag("finishSessionConfirm"),
+                onClick = {
+                    val parsedDistance = distance.trim().toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 }
+                    if (parsedDistance == null) distanceError = true
+                    else onConfirm(parsedDistance, notes.trim().takeIf { it.isNotEmpty() })
+                }
+            ) { Text("기록 저장") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("취소") } }
+    )
+}
+
+private fun elapsedMinutes(startTime: String): Int = Duration
+    .between(LocalDateTime.parse(startTime), LocalDateTime.now())
+    .toMinutes()
+    .coerceIn(1, Int.MAX_VALUE.toLong())
+    .toInt()
 
 @Composable
 private fun WeeklySparkline(data: TrackSnapshot, modifier: Modifier) {
@@ -300,42 +457,6 @@ internal fun ShoesScreen(data: TrackSnapshot, add: () -> Unit, edit: (String) ->
             }
         }
     }
-}
-
-@Composable
-internal fun AiScreen(back: () -> Unit) {
-    var message by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize()) {
-        ScreenHeader("AI 신발 추천", "새로고침", action = { message = true })
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            Badge("AI 추천 예시")
-            SectionHeading("나의 러닝에 맞는 한 켤레", "나에게 맞는 쿠셔닝과 착화감을 살펴보세요.")
-            RunTrackCard {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Badge("추천 01")
-                    Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(20.dp), tint = RunTrackColors.Accent)
-                }
-                Box(Modifier.fillMaxWidth().height(100.dp).background(RunTrackColors.Field, RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) { ShoeIcon(68.dp) }
-                Text("Nike Air Zoom Pegasus 41", style = MaterialTheme.typography.titleLarge)
-                Text("가벼우면서 충분한 쿠셔닝을 제공하는 러닝화 예시입니다. 실제 추천 결과는 추천 서비스 연동 후 표시됩니다.",
-                    style = MaterialTheme.typography.bodyMedium, color = RunTrackColors.Muted)
-                MetricCaption("예시 가격대", "$100–120")
-                Divider()
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MetricCaption("장점", "가벼움 · 통풍성\n내구성", Modifier.weight(1f), Icons.Outlined.CheckCircle)
-                    MetricCaption("고려할 점", "비용", Modifier.weight(1f))
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = { message = true }, Modifier.weight(1f)) { Text("더보기") }
-                    OutlinedButton(onClick = { message = true }, Modifier.weight(1f)) { Text("구매 정보") }
-                }
-            }
-            TextButton(onClick = back, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("홈으로 돌아가기") }
-        }
-    }
-    if (message) AlertDialog(onDismissRequest = { message = false }, title = { Text("추천 서비스 준비 중") },
-        text = { Text("현재 화면은 디자인 예시입니다. 추천과 구매 정보는 서비스 연결 후 사용할 수 있어요.") },
-        confirmButton = { TextButton(onClick = { message = false }) { Text("확인") } })
 }
 
 @Composable
