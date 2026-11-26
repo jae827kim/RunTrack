@@ -332,7 +332,7 @@ fun StatItem(
         )
         Row(
             horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.Baseline
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = value,

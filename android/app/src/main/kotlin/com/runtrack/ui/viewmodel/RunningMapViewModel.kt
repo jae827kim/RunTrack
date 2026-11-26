@@ -2,7 +2,6 @@ package com.runtrack.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.runtrack.data.api.ApiServices
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -33,9 +32,7 @@ data class RunningUIState(
  * 러닝 지도 화면 ViewModel
  * GPS 위치 추적, 거리 계산, 통계 관리
  */
-class RunningMapViewModel(
-    private val apiService: ApiServices
-) : ViewModel() {
+class RunningMapViewModel : ViewModel() {
     
     private val _uiState = MutableStateFlow(RunningUIState())
     val uiState = _uiState.asStateFlow()

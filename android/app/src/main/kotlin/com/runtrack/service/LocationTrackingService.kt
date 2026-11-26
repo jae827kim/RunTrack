@@ -1,6 +1,7 @@
 package com.runtrack.service
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -225,7 +226,7 @@ class LocationTrackingService : Service() {
     
     fun isTrackingActive(): Boolean = isTracking
     
-    private fun createNotification(): NotificationCompat.Notification {
+    private fun createNotification(): Notification {
         // Notification Channel 생성 (Android 8.0+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -245,7 +246,7 @@ class LocationTrackingService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("RunTrack 위치 추적")
             .setContentText("러닝 중 GPS 위치를 추적합니다.")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_launcher)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()
