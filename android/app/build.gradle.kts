@@ -32,7 +32,7 @@ android {
         }
 
         // 빌드 설정에서 API 키 추가 (BuildConfig로 접근)
-        buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"YOUR_GOOGLE_MAPS_API_KEY\"")
+        buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"AIzaSyCCCAkyKbyD_k33m7oVpjFVnJv7o0Uj8Ag\"")
         buildConfigField("String", "API_BASE_URL", "\"$runtrackApiUrl\"")
     }
 

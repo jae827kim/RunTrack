@@ -32,7 +32,7 @@
         <!-- Google Maps API 메타데이터 -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_GOOGLE_MAPS_API_KEY" />
+            android:value="AIzaSyCCCAkyKbyD_k33m7oVpjFVnJv7o0Uj8Ag" />
 
         <!-- Add the location service here when its implementation is available. -->
 
