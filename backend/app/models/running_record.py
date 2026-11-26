@@ -63,3 +63,4 @@ class RunningRecord(Base):
     # 관계
     user = relationship("User", back_populates="running_records")
     shoe = relationship("Shoe", back_populates="running_records")
+    gps_points = relationship("GPSPoint", back_populates="running_record", cascade="all, delete-orphan")

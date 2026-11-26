@@ -3,27 +3,13 @@ package com.runtrack.data.api
 import com.runtrack.data.models.*
 import retrofit2.Response
 import retrofit2.http.*
+import java.time.LocalDateTime
 
 interface UserService {
     // TODO: 사용자 로그인/회원가입 API 정의
 }
 
 interface ShoeService {
-    // TODO: 신발 CRUD API 정의
-}
-
-interface RunningService {
-    // TODO: 러닝 기록 CRUD 및 통계 API 정의
-}
-
-interface WeatherService {
-    // TODO: 기상 API 정의
-}
-
-interface RecommendationService {
-    // TODO: AI 추천 API 정의
-}
-
     @PUT("api/shoes/{id}")
     suspend fun updateShoe(
         @Path("id") id: Int,
@@ -61,6 +47,29 @@ interface RunningService {
 
     @GET("api/running/statistics/monthly")
     suspend fun getMonthlyStatistics(): Response<Map<String, RunningStatistics>>
+    
+    // GPS 관련 API
+    @POST("api/running/{record_id}/gps-points")
+    suspend fun addGpsPoint(
+        @Path("record_id") recordId: Int,
+        @Body gpsData: GPSPointCreate
+    ): Response<GPSPointResponse>
+    
+    @POST("api/running/{record_id}/gps-points/batch")
+    suspend fun addGpsPointsBatch(
+        @Path("record_id") recordId: Int,
+        @Body gpsDataList: List<GPSPointCreate>
+    ): Response<Map<String, Any>>
+    
+    @GET("api/running/{record_id}/gps-route")
+    suspend fun getGpsRoute(@Path("record_id") recordId: Int): Response<GPSRouteResponse>
+    
+    @GET("api/running/{record_id}/gps-points")
+    suspend fun getGpsPoints(
+        @Path("record_id") recordId: Int,
+        @Query("skip") skip: Int = 0,
+        @Query("limit") limit: Int = 100
+    ): Response<List<GPSPointResponse>>
 }
 
 interface WeatherService {
@@ -77,6 +86,41 @@ interface WeatherService {
         @Query("days") days: Int = 7
     ): Response<WeatherHistory>
 }
+
+interface RecommendationService {
+    // TODO: AI 추천 API 정의
+}
+
+// GPS 관련 데이터 모델
+data class GPSPointCreate(
+    val latitude: Double,
+    val longitude: Double,
+    val altitude_m: Double? = null,
+    val speed_kmh: Float? = null,
+    val accuracy_m: Float? = null,
+    val bearing_degrees: Float? = null,
+    val timestamp: LocalDateTime
+)
+
+data class GPSPointResponse(
+    val id: Int,
+    val running_record_id: Int,
+    val latitude: Double,
+    val longitude: Double,
+    val altitude_m: Double? = null,
+    val speed_kmh: Float? = null,
+    val accuracy_m: Float? = null,
+    val bearing_degrees: Float? = null,
+    val timestamp: LocalDateTime
+)
+
+data class GPSRouteResponse(
+    val running_record_id: Int,
+    val points: List<GPSPointResponse>,
+    val total_distance_km: Double,
+    val start_point: GPSPointResponse,
+    val end_point: GPSPointResponse
+)
 
 // 날씨 관련 응답 모델
 data class WeatherAdvice(
@@ -110,3 +154,16 @@ data class WeatherData(
     val humidity: Int,
     val windSpeed: Float
 )
+
+// 통합 API 서비스 클래스
+class ApiServices(
+    private val userService: UserService,
+    private val shoeService: ShoeService,
+    private val runningService: RunningService,
+    private val weatherService: WeatherService,
+    private val recommendationService: RecommendationService
+) : UserService by userService,
+    ShoeService by shoeService,
+    RunningService by runningService,
+    WeatherService by weatherService,
+    RecommendationService by recommendationService
