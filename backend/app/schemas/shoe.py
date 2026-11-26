@@ -10,19 +10,17 @@ class ShoeBase(BaseModel):
     model: str
     size: Optional[str] = None
     color: Optional[str] = None
-    purchase_price_won: Optional[int] = None
     purchase_date: Optional[datetime] = None
     notes: Optional[str] = None
 
 class ShoeCreate(ShoeBase):
-    pass
+    condition: Optional[str] = None
 
 class ShoeUpdate(BaseModel):
     brand: Optional[str] = None
     model: Optional[str] = None
     size: Optional[str] = None
     color: Optional[str] = None
-    purchase_price_won: Optional[int] = None
     condition: Optional[str] = None
     notes: Optional[str] = None
 

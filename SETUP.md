@@ -1,25 +1,25 @@
 # 📖 RunTrack - 완전 설정 가이드
 
-> 🏃‍♂️ **AI 기반 맞춤형 러닝 조언 앱 - 풀 스택 설정 가이드**
+> 🏃‍♂️ **러닝 기록 관리 앱 - 풀 스택 설정 가이드**
 
 **GitHub Repository**: https://github.com/jae827kim/RunTrack
 
 ---
 
-## 📅 12주 개발 일정 및 팀 역할
+## 📅 10주 개발 일정 및 팀 역할 (9월 17일 ~ 11월 마지막주)
 
-**기간**: 9월 3주차 ~ 12월 1주차 (약 12주)
-
-| 주차 | PM | Backend 1<br/>(조병현) | Backend 2<br/>(김경빈) | Frontend<br/>(이아림) | DevOps & QA<br/>(김주현) |
-|------|-----|------|------|------|------|
-| **1-2주** | 요구사항 정리, ERD | 인증/API 명세 | 러닝/기상 API 명세 | 화면 흐름, 디자인 초안 | 개발 환경, CI 초안 |
-| **3-4주** | ORM, Pydantic, 공통 규칙 | 회원/프로필 API | 러닝 기록 API | 로그인/홈, 네비게이션 | Docker, 테스트 자동화 |
-| **5-6주** | 통합 시나리오 정리 | 신발 CRUD, 예외 처리 | 기상 조언, AI 추천 초안 | 기록/신발 화면 | 배포 파이프라인 |
-| **7-8주** | 통합 테스트 실행 | 프론트 연동, 버그 수정 | 통계 로직, 프론트 연동 | 추천 화면, API 연동 | 스테이징, 로그 설정 |
-| **9-10주** | 범위 조정, 발표 초안 | 보안/응답 형식 정리 | 성능 개선, 선택 기능 판단 | UI 다듬기, 버그 수정 | 회귀 테스트, 성능 점검 |
-| **11-12주** | 최종 점검, 발표 자료 | 최종 검수 지원 | 최종 검수 지원 | 시연 흐름 정리 | 최종 배포/검증 |
-
-기상 조건 분석은 체감온도와 러닝 조언을 우선 구현하고, 러닝 추천 점수는 일정에 따라 선택 구현 범위로 둡니다.
+| 주차 | 일정 | PM | Backend 1<br/>(User/Shoe) | Backend 2<br/>(Running) | Frontend | DevOps & QA |
+|------|------|-----|------|------|------|------|
+| **1주** | 9/17-9/23 | DB 설계, ERD 작성 | API 설계 | API 설계 | 화면 설계 | 환경 구축 |
+| **2주** | 9/24-9/30 | ORM 모델 작성 | 회원가입/로그인 | 러닝 기본 API | 로그인/홈 화면 | Docker Compose, CI/CD |
+| **3주** | 10/1-10/7 | Pydantic 스키마 | 신발 CRUD API | 러닝 기록 API | 기록/신발 화면 | 테스트 자동화 |
+| **4주** | 10/8-10/14 | 통합 테스트 작성 | API 완성 | 러닝 통계 API | API 연동 화면 | 배포 파이프라인 |
+| **5주** | 10/15-10/21 | 통합 테스트 검증 | 성능 최적화 | 성능 최적화 | UI 최적화 | 성능 테스트 |
+| **6주** | 10/22-10/28 | 시스템 통합점검 | 버그 수정 | 버그 수정 | 버그 수정 | 배포 검증 |
+| **7주** | 10/29-11/4 | 통합 검증 | 최적화 | 최적화 | 최종 수정 | 배포 |
+| **8주** | 11/5-11/11 | 점검 | 추가 기능/수정 | 추가 기능/수정 | 추가 기능/수정 | 모니터링 |
+| **9주** | 11/12-11/18 | 최종 검증 | 최종 점검 | 최종 점검 | 최종 점검 | 최종 점검 |
+| **10주** | 11/19-11/25 | 발표 준비 | 발표 준비 | 발표 준비 | 발표 준비 | 발표 준비 |
 
 ---
 
@@ -40,12 +40,10 @@
 ### 구조
 ```
 RunTrack/
-├── backend/              # Python FastAPI
-├── android/              # Kotlin Android App
-├── PROJECT_SUMMARY.md    # 현재 구조 요약
-├── ROLES.md              # 역할 및 일정
-├── SETUP.md              # 통합 설정 가이드
-└── README.md             # 프로젝트 소개
+├── backend/          # Python FastAPI
+├── android/          # Kotlin Android App
+├── docs/            # 문서
+└── README.md        # 이 파일
 ```
 
 ### 기술 스택
@@ -54,7 +52,6 @@ RunTrack/
 |------|------|
 | **Frontend** | Kotlin, Jetpack Compose, Android 24+ |
 | **Backend** | Python, FastAPI, PostgreSQL, Redis |
-| **AI** | Google Gemini API |
 | **External** | Google Maps, OpenWeather |
 | **DevOps** | Docker, Docker Compose, GitHub Actions |
 
@@ -121,7 +118,6 @@ CREATE DATABASE runtrack;
 cp .env.example .env
 
 # 편집 (필수):
-# GEMINI_API_KEY=your-key
 # DATABASE_URL=postgresql://user:password@localhost:5432/runtrack
 # GOOGLE_MAPS_API_KEY=your-key
 # OPENWEATHER_API_KEY=your-key
@@ -163,7 +159,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 **build.gradle.kts 수정:**
 ```kotlin
 buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"YOUR_KEY\"")
-buildConfigField("String", "GOOGLE_GEMINI_API_KEY", "\"YOUR_KEY\"")
 buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
 ```
 
@@ -244,11 +239,6 @@ GET    /api/weather/advice     - 러닝 조언 (위도, 경도 필요)
 GET    /api/weather/history    - 기상 이력
 ```
 
-**AI 추천**
-```
-POST   /api/recommendations/shoes - 신발 추천
-```
-
 ---
 
 ## 데이터베이스 설정
@@ -270,9 +260,8 @@ DATABASE_URL = "postgresql://user:password@localhost:5432/runtrack"
 
 **shoes** - 신발 정보
 - id, user_id, brand, model, size, color
-- purchase_price_won, purchase_date
+- purchase_date (optional), condition, notes
 - cumulative_km, run_count
-- condition, notes
 - created_at, updated_at
 
 **running_records** - 러닝 기록
@@ -303,7 +292,6 @@ heroku create runtrack-api
 echo "web: uvicorn app.main:app --host 0.0.0.0 --port \$PORT" > Procfile
 
 # 환경 변수 설정
-heroku config:set GEMINI_API_KEY=your-key
 heroku config:set DATABASE_URL=postgresql://...
 heroku config:set SECRET_KEY=your-secret
 
@@ -335,11 +323,6 @@ systemctl status postgresql  # Linux
 brew services list          # macOS
 services.msc               # Windows
 ```
-
-**GEMINI_API_KEY 오류**
-- Google AI Studio에서 API 키 생성: https://makersuite.google.com/app/apikey
-- .env 파일에 추가
-- 서버 재시작
 
 **포트 충돌**
 ```bash
@@ -412,7 +395,6 @@ Android Studio > Profiler
 
 - [FastAPI 공식 문서](https://fastapi.tiangolo.com/)
 - [Jetpack Compose 가이드](https://developer.android.com/jetpack/compose)
-- [Google Gemini API](https://ai.google.dev/)
 - [PostgreSQL 튜토리얼](https://www.postgresql.org/docs/)
 
 ---
@@ -431,7 +413,9 @@ MIT License - 자유롭게 사용, 수정, 배포 가능
 
 ---
 
+**Happy Running! 🏃‍♂️🏃‍♀️**
+
 ```
-최종 수정: 2026년
+최종 수정: 2024년
 프로젝트 버전: 0.1.0
 ```

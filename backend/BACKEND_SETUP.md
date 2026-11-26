@@ -8,7 +8,6 @@ RunTrack 백엔드는 **FastAPI** 기반의 비동기 REST API 서버입니다.
 - **프레임워크**: FastAPI + Uvicorn
 - **데이터베이스**: PostgreSQL + SQLAlchemy ORM
 - **캐싱**: Redis
-- **AI 서비스**: Google Gemini API
 
 ---
 
@@ -36,8 +35,7 @@ pip install -r requirements.txt
 # .env 파일 생성
 cp .env.example .env
 
-# 편집 (필수 API 키 추가):
-# - GEMINI_API_KEY: Google Gemini API 키
+# 편집 (필요한 선택 기능의 API 키 추가):
 # - GOOGLE_MAPS_API_KEY: Google Maps API 키
 # - OPENWEATHER_API_KEY: OpenWeather API 키
 # - DATABASE_URL: PostgreSQL 연결 문자열
@@ -93,12 +91,11 @@ DELETE /shoes/{id}                - 신발 삭제
 
 ---
 
-### Backend 2: 러닝기록 & AI & 날씨 (Running/Weather/AI API)
+### Backend 2: 러닝 세션·기록·통계 API
 
 **담당 파일:**
 - `app/api/routes/running.py` - 러닝 기록 저장/조회
 - `app/api/routes/weather.py` - 날씨 정보
-- `app/api/ai/recommendations.py` - Google Gemini AI 추천
 
 **구현 API:**
 ```
@@ -108,7 +105,6 @@ GET    /running/stats             - 러닝 통계
 PUT    /running/{id}              - 기록 수정
 DELETE /running/{id}              - 기록 삭제
 GET    /weather/info              - 기상 정보
-POST   /recommendations/shoes     - AI 신발 추천
 ```
 
 **코드량:** ~400줄  
@@ -148,8 +144,6 @@ backend/
 │   │   │   ├── shoes.py
 │   │   │   ├── running.py
 │   │   │   └── weather.py
-│   │   └── ai/
-│   │       └── recommendations.py
 │   ├── models/              # SQLAlchemy 모델
 │   │   ├── user.py
 │   │   ├── shoe.py
@@ -207,12 +201,6 @@ backend/
 | GET    | `/api/weather/advice` | 러닝 조언 |
 | GET    | `/api/weather/history` | 기상 이력 |
 
-### AI 추천
-
-| 메서드 | 엔드포인트 | 설명 |
-|--------|-----------|------|
-| POST   | `/api/recommendations/shoes` | 신발 추천 |
-
 ---
 
 ## 🧪 테스트
@@ -267,28 +255,12 @@ curl -H "Authorization: Bearer {token}" http://localhost:8000/api/users/me
 
 ---
 
-## 🤖 AI 신발 추천
-
-Google Gemini API를 활용하여 사용자 정보에 맞는 신발을 추천합니다.
-
-**입력 정보**:
-- 체중, 키, 발크기
-- 발볼 너비, 아치 타입
-- 러닝 스타일, 예산
-- 선호 브랜드
-
-**출력**:
-- 상위 3개 신발 추천
-- 추천 이유, 장단점
-- 예상 가격, 내구성
-
 ---
 
 ## 🌡️ 기상 조언
 
 OpenWeather API를 활용하여:
 - 체감 온도 계산
-- 러닝 추천 점수 (일정 여유 시 선택 구현)
 - 조건별 안내 (최적/좋음/괜찮음/나쁨)
 
 **최적 조건**:
@@ -355,7 +327,6 @@ redis-server
 - [FastAPI 문서](https://fastapi.tiangolo.com/)
 - [SQLAlchemy 문서](https://docs.sqlalchemy.org/)
 - [Pydantic 문서](https://docs.pydantic.dev/)
-- [Google Gemini API](https://ai.google.dev/)
 - [OpenWeather API](https://openweathermap.org/api)
 
 ---

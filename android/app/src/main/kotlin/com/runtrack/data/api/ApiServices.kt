@@ -1,20 +1,33 @@
 package com.runtrack.data.api
 
 import com.runtrack.data.models.*
+import com.google.gson.annotations.SerializedName
 import retrofit2.Response
 import retrofit2.http.*
-import java.time.LocalDateTime
 
 interface UserService {
-    // TODO: 사용자 로그인/회원가입 API 정의
+    @POST("api/users/register")
+    suspend fun register(@Body request: RegisterRequest): Response<User>
+
+    @POST("api/users/login")
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    @GET("api/users/me")
+    suspend fun getProfile(@Header("Authorization") authorization: String? = null): Response<User>
 }
 
 interface ShoeService {
+    @POST("api/shoes")
+    suspend fun createShoe(@Body request: ShoeCreateRequest): Response<Shoe>
+
+    @GET("api/shoes")
+    suspend fun getShoes(): Response<List<Shoe>>
+
+    @GET("api/shoes/{id}")
+    suspend fun getShoe(@Path("id") id: Int): Response<Shoe>
+
     @PUT("api/shoes/{id}")
-    suspend fun updateShoe(
-        @Path("id") id: Int,
-        @Body request: ShoeUpdateRequest
-    ): Response<Shoe>
+    suspend fun updateShoe(@Path("id") id: Int, @Body request: ShoeUpdateRequest): Response<Shoe>
 
     @DELETE("api/shoes/{id}")
     suspend fun deleteShoe(@Path("id") id: Int): Response<Unit>
@@ -23,12 +36,31 @@ interface ShoeService {
     suspend fun getShoeStats(@Path("id") id: Int): Response<ShoeStats>
 }
 
+data class RunningSessionEndRequest(
+    @SerializedName("distance_km") val distanceKm: Float,
+    @SerializedName("duration_minutes") val durationMinutes: Int,
+    @SerializedName("end_time") val endTime: String? = null,
+    val notes: String? = null,
+)
+
 interface RunningService {
+    @POST("api/running")
+    suspend fun createRecord(@Body request: RunningRecordCreateRequest): Response<RunningRecord>
+
+    @PUT("api/running/{id}")
+    suspend fun updateRecord(@Path("id") id: Int, @Body request: RunningRecordUpdateRequest): Response<RunningRecord>
+
+    @DELETE("api/running/{id}")
+    suspend fun deleteRecord(@Path("id") id: Int): Response<Unit>
+
     @POST("api/running/start")
-    suspend fun startRunning(): Response<Map<String, String>>
+    suspend fun startRunning(@Body request: RunningSessionStartRequest): Response<RunningSessionResponse>
 
     @POST("api/running/{id}/end")
-    suspend fun endRunning(@Path("id") sessionId: String): Response<RunningRecord>
+    suspend fun endRunning(
+        @Path("id") sessionId: String,
+        @Body request: RunningSessionEndRequest,
+    ): Response<RunningRecord>
 
     @GET("api/running")
     suspend fun getRunningRecords(
@@ -87,41 +119,6 @@ interface WeatherService {
     ): Response<WeatherHistory>
 }
 
-interface RecommendationService {
-    // TODO: AI 추천 API 정의
-}
-
-// GPS 관련 데이터 모델
-data class GPSPointCreate(
-    val latitude: Double,
-    val longitude: Double,
-    val altitude_m: Double? = null,
-    val speed_kmh: Float? = null,
-    val accuracy_m: Float? = null,
-    val bearing_degrees: Float? = null,
-    val timestamp: LocalDateTime
-)
-
-data class GPSPointResponse(
-    val id: Int,
-    val running_record_id: Int,
-    val latitude: Double,
-    val longitude: Double,
-    val altitude_m: Double? = null,
-    val speed_kmh: Float? = null,
-    val accuracy_m: Float? = null,
-    val bearing_degrees: Float? = null,
-    val timestamp: LocalDateTime
-)
-
-data class GPSRouteResponse(
-    val running_record_id: Int,
-    val points: List<GPSPointResponse>,
-    val total_distance_km: Double,
-    val start_point: GPSPointResponse,
-    val end_point: GPSPointResponse
-)
-
 // 날씨 관련 응답 모델
 data class WeatherAdvice(
     val latitude: Double,
@@ -155,15 +152,33 @@ data class WeatherData(
     val windSpeed: Float
 )
 
-// 통합 API 서비스 클래스
-class ApiServices(
-    private val userService: UserService,
-    private val shoeService: ShoeService,
-    private val runningService: RunningService,
-    private val weatherService: WeatherService,
-    private val recommendationService: RecommendationService
-) : UserService by userService,
-    ShoeService by shoeService,
-    RunningService by runningService,
-    WeatherService by weatherService,
-    RecommendationService by recommendationService
+// GPS 관련 데이터 모델
+data class GPSPointCreate(
+    val latitude: Double,
+    val longitude: Double,
+    val altitude_m: Double? = null,
+    val speed_kmh: Float? = null,
+    val accuracy_m: Float? = null,
+    val bearing_degrees: Float? = null,
+    val timestamp: String
+)
+
+data class GPSPointResponse(
+    val id: Int,
+    val running_record_id: Int,
+    val latitude: Double,
+    val longitude: Double,
+    val altitude_m: Double? = null,
+    val speed_kmh: Float? = null,
+    val accuracy_m: Float? = null,
+    val bearing_degrees: Float? = null,
+    val timestamp: String
+)
+
+data class GPSRouteResponse(
+    val running_record_id: Int,
+    val points: List<GPSPointResponse>,
+    val total_distance_km: Double,
+    val start_point: GPSPointResponse,
+    val end_point: GPSPointResponse
+)

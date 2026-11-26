@@ -4,24 +4,40 @@
 - 러닝 기록 조회, 통계 분석
 - GPS 위치점 저장 및 조회
 """
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from app.database import get_db
-from app.models.running_record import RunningRecord
-from app.models.gps_point import GPSPoint
-from app.schemas.gps_point import GPSPointCreate, GPSPointResponse, GPSRouteResponse
-from datetime import datetime
+from uuid import UUID
 from math import radians, sin, cos, sqrt, atan2
 
-router = APIRouter()
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
+from sqlalchemy.orm import Session
+from app.api.dependencies import get_current_user
+from app.database import get_db
+from app.models import User
+from app.models.running_record import RunningRecord
+from app.models.gps_point import GPSPoint
+from app.schemas.running_record import (
+    RunningRecordCreate, RunningRecordResponse, RunningStatistics, RunningRecordUpdate,
+    RunningSessionStart, RunningSessionResponse, RunningSessionEnd,
+)
+from app.schemas.gps_point import GPSPointCreate, GPSPointResponse, GPSRouteResponse
+from app.services.running import RunningService
 
-# 헬퍼: 두 좌표 간의 거리 계산 (Haversine 공식)
+router = APIRouter(responses={
+    401: {"description": "Authentication required"},
+    404: {"description": "Owned record or shoe not found"},
+    409: {"description": "Session or shoe totals conflict"},
+})
+
+
+def get_running_service(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return RunningService(db, current_user)
+
+
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """
-    두 위도/경도 사이의 거리 계산 (킬로미터)
-    """
-    R = 6371  # 지구 반경 (km)
+    """두 위도/경도 사이의 거리 계산 (킬로미터)"""
+    R = 6371
     
     lat1_rad = radians(lat1)
     lon1_rad = radians(lon1)
@@ -37,41 +53,46 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return R * c
 
 # 러닝 세션 시작
-@router.post("/start")
-async def start_running(db: Session = Depends(get_db)):
-    pass
+@router.post("/start", response_model=RunningSessionResponse)
+def start_running(
+    request: RunningSessionStart | None = None,
+    service: RunningService = Depends(get_running_service),
+):
+    """Start a persisted session or recover the owner's matching active session."""
+    return service.start(request or RunningSessionStart())
 
 # 러닝 세션 종료
-@router.post("/{session_id}/end")
-async def end_running(session_id: str, db: Session = Depends(get_db)):
-    pass
+@router.post("/{session_id}/end", response_model=RunningRecordResponse,
+             responses={410: {"description": "Completed record was deleted"}})
+def end_running(
+    session_id: UUID,
+    request: RunningSessionEnd,
+    service: RunningService = Depends(get_running_service),
+):
+    """Finalize a run once; identical retries return the existing record."""
+    return service.end(str(session_id), request)
 
-# 러닝 기록 조회
-@router.get("")
-async def get_running_records(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    pass
 
-# 러닝 기록 상세
-@router.get("/{record_id}")
-async def get_running_record(record_id: int, db: Session = Depends(get_db)):
-    pass
+@router.post("", response_model=RunningRecordResponse, status_code=201)
+def create_running_record(
+    request: RunningRecordCreate,
+    service: RunningService = Depends(get_running_service),
+):
+    """Save a completed run and update the selected shoe's totals atomically."""
+    return service.create_record(request)
 
-# GPS 위치점 추가 (러닝 중 실시간)
-@router.post("/{record_id}/gps-points")
+# GPS 위치점 추가 (실시간)
+@router.post("/{record_id}/gps-points", response_model=GPSPointResponse)
 async def add_gps_point(
     record_id: int, 
     gps_data: GPSPointCreate, 
     db: Session = Depends(get_db)
 ):
-    """
-    러닝 세션에 GPS 위치점 추가
-    """
-    # 러닝 기록 존재 확인
+    """러닝 세션에 GPS 위치점 추가"""
     running_record = db.query(RunningRecord).filter(RunningRecord.id == record_id).first()
     if not running_record:
         raise HTTPException(status_code=404, detail="러닝 기록을 찾을 수 없습니다.")
     
-    # GPS 포인트 생성
     gps_point = GPSPoint(
         running_record_id=record_id,
         latitude=gps_data.latitude,
@@ -89,24 +110,20 @@ async def add_gps_point(
     
     return GPSPointResponse.model_validate(gps_point)
 
-# GPS 위치점 여러 개 추가 (배치)
+# GPS 위치점 배치 추가
 @router.post("/{record_id}/gps-points/batch")
 async def add_gps_points_batch(
     record_id: int, 
     gps_data_list: list[GPSPointCreate], 
     db: Session = Depends(get_db)
 ):
-    """
-    러닝 세션에 여러 GPS 위치점 추가 (배치)
-    """
-    # 러닝 기록 존재 확인
+    """러닝 세션에 여러 GPS 위치점 추가"""
     running_record = db.query(RunningRecord).filter(RunningRecord.id == record_id).first()
     if not running_record:
         raise HTTPException(status_code=404, detail="러닝 기록을 찾을 수 없습니다.")
     
-    gps_points = []
-    for gps_data in gps_data_list:
-        gps_point = GPSPoint(
+    gps_points = [
+        GPSPoint(
             running_record_id=record_id,
             latitude=gps_data.latitude,
             longitude=gps_data.longitude,
@@ -116,7 +133,8 @@ async def add_gps_points_batch(
             bearing_degrees=gps_data.bearing_degrees,
             timestamp=gps_data.timestamp
         )
-        gps_points.append(gps_point)
+        for gps_data in gps_data_list
+    ]
     
     db.add_all(gps_points)
     db.commit()
@@ -124,17 +142,13 @@ async def add_gps_points_batch(
     return {"message": f"{len(gps_points)}개의 GPS 위치점이 추가되었습니다.", "count": len(gps_points)}
 
 # GPS 경로 조회
-@router.get("/{record_id}/gps-route")
+@router.get("/{record_id}/gps-route", response_model=GPSRouteResponse)
 async def get_gps_route(record_id: int, db: Session = Depends(get_db)):
-    """
-    러닝 기록의 전체 GPS 경로 조회 (모든 위치점)
-    """
-    # 러닝 기록 존재 확인
+    """러닝 기록의 전체 GPS 경로 조회"""
     running_record = db.query(RunningRecord).filter(RunningRecord.id == record_id).first()
     if not running_record:
         raise HTTPException(status_code=404, detail="러닝 기록을 찾을 수 없습니다.")
     
-    # GPS 포인트 조회 (시간순)
     gps_points = db.query(GPSPoint).filter(
         GPSPoint.running_record_id == record_id
     ).order_by(GPSPoint.timestamp).all()
@@ -142,7 +156,6 @@ async def get_gps_route(record_id: int, db: Session = Depends(get_db)):
     if len(gps_points) < 2:
         raise HTTPException(status_code=400, detail="GPS 데이터가 충분하지 않습니다.")
     
-    # 총 거리 계산
     total_distance_km = 0.0
     for i in range(len(gps_points) - 1):
         point1 = gps_points[i]
@@ -161,23 +174,19 @@ async def get_gps_route(record_id: int, db: Session = Depends(get_db)):
         end_point=GPSPointResponse.model_validate(gps_points[-1])
     )
 
-# GPS 포인트 조회
-@router.get("/{record_id}/gps-points")
+# GPS 포인트 조회 (페이징)
+@router.get("/{record_id}/gps-points", response_model=list[GPSPointResponse])
 async def get_gps_points(
     record_id: int,
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db)
 ):
-    """
-    러닝 기록의 GPS 포인트 조회 (페이징)
-    """
-    # 러닝 기록 존재 확인
+    """러닝 기록의 GPS 포인트 조회"""
     running_record = db.query(RunningRecord).filter(RunningRecord.id == record_id).first()
     if not running_record:
         raise HTTPException(status_code=404, detail="러닝 기록을 찾을 수 없습니다.")
     
-    # GPS 포인트 조회
     gps_points = db.query(GPSPoint).filter(
         GPSPoint.running_record_id == record_id
     ).order_by(GPSPoint.timestamp).offset(skip).limit(limit).all()
@@ -185,16 +194,52 @@ async def get_gps_points(
     return [GPSPointResponse.model_validate(p) for p in gps_points]
 
 # 전체 통계 요약
-@router.get("/statistics/summary")
-async def get_summary_statistics(db: Session = Depends(get_db)):
-    pass
+@router.get("/statistics/summary", response_model=RunningStatistics)
+def get_summary_statistics(service: RunningService = Depends(get_running_service)):
+    return service.summary()
 
 # 주간 통계
-@router.get("/statistics/weekly")
-async def get_weekly_statistics(db: Session = Depends(get_db)):
-    pass
+@router.get("/statistics/weekly", response_model=dict[str, RunningStatistics])
+def get_weekly_statistics(service: RunningService = Depends(get_running_service)):
+    return service.weekly()
 
 # 월간 통계
-@router.get("/statistics/monthly")
-async def get_monthly_statistics(db: Session = Depends(get_db)):
-    pass
+@router.get("/statistics/monthly", response_model=dict[str, RunningStatistics])
+def get_monthly_statistics(service: RunningService = Depends(get_running_service)):
+    return service.monthly()
+
+# 러닝 기록 조회
+@router.get("", response_model=list[RunningRecordResponse])
+def get_running_records(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    service: RunningService = Depends(get_running_service),
+):
+    return service.list_records(skip, limit)
+
+# 러닝 기록 상세
+@router.get("/{record_id}", response_model=RunningRecordResponse)
+def get_running_record(
+    record_id: int = Path(..., gt=0),
+    service: RunningService = Depends(get_running_service),
+):
+    return service.get_record(record_id)
+
+
+@router.put("/{record_id}", response_model=RunningRecordResponse)
+def update_running_record(
+    request: RunningRecordUpdate,
+    record_id: int = Path(..., gt=0),
+    service: RunningService = Depends(get_running_service),
+):
+    """Draft: omitted fields stay unchanged, explicit null clears optional fields."""
+    return service.update_record(record_id, request)
+
+
+@router.delete("/{record_id}", status_code=204)
+def delete_running_record(
+    record_id: int = Path(..., gt=0),
+    service: RunningService = Depends(get_running_service),
+):
+    service.delete_record(record_id)
+    return Response(status_code=204)

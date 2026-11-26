@@ -1,8 +1,18 @@
+import java.net.URI
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.android)
+}
+
+val runtrackApiUrl = providers.gradleProperty("runtrackApiBaseUrl")
+    .orElse("http://10.0.2.2:8000/").get().trim().let { it.trimEnd('/') + "/" }
+val runtrackApiUri = URI(runtrackApiUrl)
+require(runtrackApiUri.scheme in listOf("http", "https") && !runtrackApiUri.host.isNullOrBlank() &&
+    runtrackApiUri.userInfo == null && runtrackApiUri.query == null && runtrackApiUri.fragment == null) {
+    "runtrackApiBaseUrl must be an http(s) URL without credentials, query or fragment."
 }
 
 android {
@@ -23,8 +33,7 @@ android {
 
         // 빌드 설정에서 API 키 추가 (BuildConfig로 접근)
         buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"YOUR_GOOGLE_MAPS_API_KEY\"")
-        buildConfigField("String", "GOOGLE_GEMINI_API_KEY", "\"YOUR_GOOGLE_GEMINI_API_KEY\"")
-        buildConfigField("String", "API_BASE_URL", "\"http://localhost:8000/\"")
+        buildConfigField("String", "API_BASE_URL", "\"$runtrackApiUrl\"")
     }
 
     buildTypes {
@@ -38,6 +47,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -52,7 +62,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
 
     packaging {
@@ -63,6 +73,8 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    implementation("io.coil-kt:coil-svg:2.5.0")
     // Compose
     implementation(platform("androidx.compose:compose-bom:2023.10.00"))
     implementation("androidx.compose.ui:ui")
@@ -81,9 +93,9 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.4")
 
     // Hilt (DI)
-    implementation("com.google.dagger:hilt-android:2.48")
+    implementation("com.google.dagger:hilt-android:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
-    kapt("com.google.dagger:hilt-compiler:2.48")
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
 
     // Networking
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -101,11 +113,8 @@ dependencies {
     // Google Play Services (Location, Maps)
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation("com.google.maps.android:maps-compose:4.0.1")
+    implementation("com.google.maps.android:maps-compose:4.0.0")
     implementation("com.google.maps.android:maps-ktx:5.0.0")
-
-    // Google Gemini API
-    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
 
     // DataStore (로컬 저장소)
     implementation("androidx.datastore:datastore-preferences:1.0.0")
@@ -123,6 +132,7 @@ dependencies {
 
     // Testing
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.11.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

@@ -1,0 +1,11 @@
+# Gson reads these models through reflection, including in release builds.
+-keep class com.runtrack.data.models.** { *; }
+-keep class com.runtrack.data.api.WeatherAdvice { *; }
+-keep class com.runtrack.data.api.WeatherHistory { *; }
+-keep class com.runtrack.data.api.Location { *; }
+-keep class com.runtrack.data.api.WeatherData { *; }
+-keep class com.runtrack.data.api.RunningSessionEndRequest { *; }
+-keep class com.runtrack.data.local.** { *; }
+-keep class com.runtrack.data.weather.ForecastResponse { *; }
+-keep class com.runtrack.data.weather.ForecastCurrent { *; }
+-keep class com.runtrack.data.weather.ForecastUnits { *; }

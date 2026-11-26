@@ -75,8 +75,7 @@ android/
 │   │   │   │   │   │   └── Type.kt
 │   │   │   │   │   ├── home/
 │   │   │   │   │   ├── shoes/
-│   │   │   │   │   ├── running/
-│   │   │   │   │   └── recommendations/
+│   │   │   │   │   └── running/
 │   │   │   │   ├── data/
 │   │   │   │   │   ├── api/
 │   │   │   │   │   │   ├── ApiServices.kt
@@ -187,36 +186,6 @@ class ShoeViewModel @Inject constructor(
         }
     }
 }
-```
-
----
-
-## 📍 GPS & 위치 권한
-
-### 필요한 권한
-
-```xml
-<!-- AndroidManifest.xml -->
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-```
-
-### 런타임 권한 요청
-
-```kotlin
-// Android 6.0+ (API 23+)에서는 런타임 권한 필요
-val launcher = rememberLauncherForActivityResult(
-    ActivityResultContracts.RequestPermission()
-) { isGranted ->
-    if (isGranted) {
-        // 위치 서비스 시작
-    }
-}
-
-Button(onClick = {
-    launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-})
 ```
 
 ---
